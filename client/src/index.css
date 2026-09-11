@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand Colors */
+  --color-base: #FAF6F0;
+  --color-ink: #221B26;
+  --color-coral: #FF6F4D;
+  --color-teal: #1F8A82;
+  --color-amber: #FFC857;
+
+  /* Typography */
+  --font-display: "Cabinet Grotesk", "General Sans", Poppins, sans-serif;
+  --font-body: "Public Sans", "Work Sans", sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-base);
+    color: #221B26;
+    font-family: var(--font-body);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: bold;
+    color: #221B26;
+  }
+}
+
+.brand-title {
+  color: #221B26 !important;
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+
+.brand-subtitle {
+  color: #1F8A82 !important;
+  font-weight: 700;
+}
+
+@keyframes fill {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
