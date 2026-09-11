@@ -147,7 +147,7 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
               <div>
                 <h2 className="brand-title text-xl font-black text-[#221B26]">Shree Ganpati</h2>
                 <p className="brand-subtitle text-xs font-bold text-teal">Ortho &amp; Spine Physiotherapy Clinic</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">Hospital Road, Opp. Central Bank of India, Nadaun (H.P.)</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Hospital Road, Shop No. 2, Court Road, near Sharma &amp; Sanjeevni Clinic, Nadaun, H.P. - 177033</p>
               </div>
             </div>
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 export default function LocationSection() {
-  const address = "Opposite Central Bank of India, Hospital Road, Nadaun, Hamirpur - 177033, Himachal Pradesh, India";
+  const address = "Hospital road, shop no. 2, Court road, near sharma and Sanjeevni clinic, Nadaun, Himachal Pradesh 177033, India";
   const mapShareLink = "https://share.google/VQtNvUSwIJh91p4eO";
   const embedLink = "https://maps.google.com/maps?q=Shree+Ganpati+ortho+and+spine+physiotherapy+clinic+Nadaun+Hamirpur&t=&z=15&ie=UTF8&iwloc=&output=embed";
 
