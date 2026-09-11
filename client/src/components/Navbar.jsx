@@ -42,7 +42,7 @@ export default function Navbar() {
               Shree Ganpati
             </span>
             <span className="brand-subtitle text-[10px] sm:text-xs tracking-wide text-[#1F8A82] font-bold truncate">
-              Ortho &amp; Spine Clinic
+              Ortho &amp; Spine Clinic Physiotherapy Clinic
             </span>
           </div>
         </Link>
