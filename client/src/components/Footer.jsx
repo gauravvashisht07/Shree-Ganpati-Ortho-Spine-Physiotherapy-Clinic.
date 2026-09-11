@@ -1,7 +1,18 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Footer() {
+  const location = useLocation();
+
+  const handleLocationClick = () => {
+    if (location.pathname === '/') {
+      const el = document.getElementById('location');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <footer className="bg-[#FAF6F0] border-t border-gray-200 px-6 lg:px-16 py-12 mt-auto">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
@@ -29,7 +40,7 @@ export default function Footer() {
           <Link to="/services" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Services</Link>
           <Link to="/blog" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Blog</Link>
           <Link to="/book" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Booking</Link>
-          <a href="/#location" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Location</a>
+          <Link to="/#location" onClick={handleLocationClick} className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Location</Link>
           <Link to="/admin" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Admin</Link>
         </div>
       </div>

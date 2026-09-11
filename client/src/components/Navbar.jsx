@@ -9,9 +9,22 @@ export default function Navbar() {
     { to: '/services', label: 'Services' },
     { to: '/blog', label: 'Blog & Videos' },
     { to: '/book', label: 'Booking' },
+    { to: '/#location', label: 'Location' },
     { to: '/my-appointments', label: 'My Appointments' },
     { to: '/admin', label: 'Admin' },
   ];
+
+  const handleLinkClick = (to) => {
+    setMenuOpen(false);
+    if (to === '/#location') {
+      if (location.pathname === '/') {
+        const el = document.getElementById('location');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-[#FAF6F0]/95 backdrop-blur-sm border-b border-gray-100 px-3 sm:px-6 lg:px-16 py-3 sm:py-4">
@@ -35,13 +48,15 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
           {links.map(({ to, label }) => (
             <Link
               key={to}
               to={to}
-              className={`text-sm font-medium transition-colors hover:text-[#FF6F4D] ${location.pathname === to ? 'text-[#FF6F4D] font-bold' : 'text-gray-600'
-                }`}
+              onClick={() => handleLinkClick(to)}
+              className={`text-sm font-medium transition-colors hover:text-[#FF6F4D] ${
+                location.pathname === to ? 'text-[#FF6F4D] font-bold' : 'text-gray-600'
+              }`}
             >
               {label}
             </Link>
@@ -74,7 +89,7 @@ export default function Navbar() {
             <Link
               key={to}
               to={to}
-              onClick={() => setMenuOpen(false)}
+              onClick={() => handleLinkClick(to)}
               className="block text-[#221B26] font-bold py-2.5 px-2 min-h-[44px] flex items-center rounded-lg border-b border-gray-100/60 last:border-0 hover:bg-white/60 hover:text-[#FF6F4D] transition-colors"
             >
               {label}

@@ -42,12 +42,14 @@ function Home() {
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
