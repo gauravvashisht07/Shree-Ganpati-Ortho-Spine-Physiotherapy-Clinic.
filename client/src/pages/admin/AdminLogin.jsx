@@ -88,7 +88,7 @@ export default function AdminLogin() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@shreeganpati.com"
+              placeholder="shreeganpatiorthospinephysio@gmail.com"
               className="w-full bg-gray-50 border border-gray-200 px-4 py-3.5 rounded-2xl focus:border-coral focus:outline-none font-bold text-ink transition-colors"
             />
           </div>

@@ -216,7 +216,7 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
           {/* Footer Note */}
           <div className="text-center pt-4 border-t border-dashed border-gray-200">
             <p className="text-[11px] text-gray-500">
-              Helpline: <strong className="text-ink">+91 98765 43210</strong> • Emergency &amp; Queries: <strong className="text-ink">care@shreeganpati.com</strong>
+              Helpline: <strong className="text-ink">+91 98765 43210</strong> • Queries: <strong className="text-ink">shreeganpatiorthospinephysio@gmail.com</strong>
             </p>
           </div>
 

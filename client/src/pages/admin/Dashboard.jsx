@@ -86,7 +86,7 @@ export default function Dashboard() {
               AD
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-ink truncate">{user?.email || 'admin@shreeganpati.com'}</p>
+              <p className="text-xs font-bold text-ink truncate">{user?.email || 'shreeganpatiorthospinephysio@gmail.com'}</p>
               <span className="text-[10px] font-black uppercase tracking-wider text-teal">Active Admin</span>
             </div>
           </div>

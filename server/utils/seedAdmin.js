@@ -3,7 +3,7 @@ const Admin = require('../models/Admin');
 
 const seedAdmin = async () => {
   try {
-    const defaultEmail = (process.env.ADMIN_EMAIL || 'admin@shreeganpati.com').toLowerCase();
+    const defaultEmail = (process.env.ADMIN_EMAIL || 'shreeganpatiorthospinephysio@gmail.com').toLowerCase();
     const existing = await Admin.findOne({ email: defaultEmail });
     if (!existing) {
       const defaultPassword = process.env.ADMIN_PASSWORD || 'Admin@Ganpati2026!';
