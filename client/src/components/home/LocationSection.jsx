@@ -52,7 +52,7 @@ export default function LocationSection() {
                 </div>
                 <div>
                   <h4 className="font-bold text-[#221B26] mb-1">Operating Hours</h4>
-                  <p className="text-gray-600 text-sm">Mon - Sat: 10:30 AM - 5:30 PM</p>
+                  <p className="text-gray-600 text-sm">Mon - Sat: 10:00 AM - 6:00 PM</p>
                   <p className="text-red-500 font-bold text-sm">Sunday: Closed</p>
                 </div>
               </div>

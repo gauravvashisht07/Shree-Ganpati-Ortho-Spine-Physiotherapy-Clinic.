@@ -125,7 +125,7 @@ export default function BodyMapHero() {
               <p className="text-xs text-gray-500 font-medium mt-0.5 leading-tight">Patient Rating</p>
             </div>
             <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-2xl border border-gray-100 shadow-2xs">
-              <p className="text-2xl font-display font-black text-[#221B26]">10+ Yrs</p>
+              <p className="text-2xl font-display font-black text-[#221B26]">2+ Years</p>
               <p className="text-xs text-gray-500 font-medium mt-0.5 leading-tight">Clinical Expertise</p>
             </div>
           </div>

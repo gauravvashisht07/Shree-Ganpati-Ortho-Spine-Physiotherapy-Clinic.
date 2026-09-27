@@ -31,13 +31,13 @@ const generateSlots = async (doctorId, date) => {
     daySchedule = doctor.workingHours[dayOfWeek];
   }
   
-  // Default clinic working hours: Monday to Saturday 10:30 AM to 5:30 PM (17:30), Sunday Closed
+  // Default clinic working hours: Monday to Saturday 10:00 AM to 6:00 PM (18:00), Sunday Closed
   if (!daySchedule || daySchedule.length === 0) {
     if (dayOfWeek === 'sunday') {
       daySchedule = []; // Sunday Closed
     } else {
       daySchedule = [
-        { start: '10:30', end: '17:30' }
+        { start: '10:00', end: '18:00' }
       ];
     }
   }

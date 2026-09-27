@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const TIMES = ['10:30 am', '11:30 am', '12:30 pm', '1:30 pm', '2:30 pm', '3:30 pm', '4:30 pm', '5:00 pm'];
+const TIMES = ['10:00 am', '11:00 am', '12:00 pm', '1:00 pm', '2:00 pm', '3:00 pm', '4:00 pm', '5:00 pm', '5:30 pm'];
 
 export default function BookingPreview() {
   const [selectedDay, setSelectedDay] = useState(2); // Wed
-  const [selectedTime, setSelectedTime] = useState('10:30 am');
+  const [selectedTime, setSelectedTime] = useState('10:00 am');
 
   // Generate dates for this week
   const today = new Date();
@@ -30,11 +30,11 @@ export default function BookingPreview() {
               Your recovery<br/>starts this week.
             </h2>
             <p className="text-teal-100 font-body mb-8">
-              Sessions available Monday through Saturday (10:30 AM to 5:30 PM). Sunday is Closed.
+              Sessions available Monday through Saturday (10:00 AM to 6:00 PM). Sunday is Closed.
             </p>
             <div className="flex flex-wrap gap-3">
               <span className="inline-flex items-center gap-2 bg-white/10 text-white text-sm font-bold px-4 py-2 rounded-full">
-                ⏰ Mon - Sat: 10:30 AM - 5:30 PM
+                ⏰ Mon - Sat: 10:00 AM - 6:00 PM
               </span>
               <span className="inline-flex items-center gap-2 bg-white/10 text-white text-sm font-bold px-4 py-2 rounded-full">
                 🚫 Sunday: Closed
