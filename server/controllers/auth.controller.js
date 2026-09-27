@@ -42,18 +42,24 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
-    let user = await Patient.findOne({ email });
-    let role = 'patient';
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = new RegExp(`^${cleanEmail}$`, 'i');
+
+    let user = await Admin.findOne({ email: emailRegex });
+    let role = 'admin';
     
     if (!user) {
-      user = await Doctor.findOne({ email });
+      user = await Doctor.findOne({ email: emailRegex });
       role = 'doctor';
     }
     
     if (!user) {
-      user = await Admin.findOne({ email });
-      role = 'admin';
+      user = await Patient.findOne({ email: emailRegex });
+      role = 'patient';
     }
 
     if (!user || !user.passwordHash) {
