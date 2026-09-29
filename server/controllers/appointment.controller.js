@@ -6,11 +6,43 @@ const { sendBookingConfirmation, sendCancellationNotice } = require('../services
 
 exports.createAppointment = async (req, res) => {
   try {
-    let { patientId, patientName, patientEmail, patientPhone, patientAddress, address, doctorId, serviceId, date, timeSlot } = req.body;
+    let { patientId, patientName, patientEmail, patientPhone, patientAddress, address, doctorId, serviceId, date, timeSlot, status } = req.body;
     const finalAddress = (patientAddress || address || '').trim();
 
     if (!doctorId || !date || !timeSlot) {
       return res.status(400).json({ message: 'Doctor, date, and time slot are required.' });
+    }
+
+    // Normalize date format if passed as DD-MM-YYYY or MM-DD-YYYY to YYYY-MM-DD
+    if (typeof date === 'string') {
+      const parts = date.split(/[-/]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          // Already YYYY-MM-DD
+          date = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        } else if (parts[2].length === 4) {
+          // DD-MM-YYYY or MM-DD-YYYY -> convert to YYYY-MM-DD
+          date = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+      }
+    }
+
+    // Normalize timeSlot format (e.g., "10:00 AM" -> "10:00", "01:30 PM" -> "13:30")
+    if (typeof timeSlot === 'string') {
+      const cleanTime = timeSlot.trim().toUpperCase();
+      if (cleanTime.includes('AM') || cleanTime.includes('PM')) {
+        const isPM = cleanTime.includes('PM');
+        const rawTime = cleanTime.replace(/[^\d:]/g, '');
+        const [rawH, rawM = '00'] = rawTime.split(':');
+        let hours = parseInt(rawH, 10);
+        const minutes = parseInt(rawM, 10);
+        if (isPM && hours < 12) hours += 12;
+        if (!isPM && hours === 12) hours = 0;
+        timeSlot = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      } else if (/^\d{1,2}:\d{2}$/.test(cleanTime)) {
+        const [h, m] = cleanTime.split(':');
+        timeSlot = `${h.padStart(2, '0')}:${m}`;
+      }
     }
 
     // Resolve or create patient
@@ -68,7 +100,7 @@ exports.createAppointment = async (req, res) => {
       patientAddress: finalAddress,
       date,
       timeSlot,
-      status: 'pending',
+      status: status || 'pending',
       paymentStatus: 'unpaid',
       isActive: true
     });
@@ -92,12 +124,18 @@ exports.createAppointment = async (req, res) => {
     });
 
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(409).json({ 
-        message: 'This time slot was just booked by someone else, please choose another slot.' 
+    console.error('Error creating appointment:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: Object.values(error.errors).map(e => e.message).join(', ') || 'Validation error'
       });
     }
-    res.status(500).json({ message: 'Server error', error: error.message });
+    if (error.code === 11000) {
+      return res.status(409).json({ 
+        message: 'This time slot is already booked for the selected doctor. Please choose another time.' 
+      });
+    }
+    res.status(500).json({ message: error.message || 'Server error', error: error.message });
   }
 };
 

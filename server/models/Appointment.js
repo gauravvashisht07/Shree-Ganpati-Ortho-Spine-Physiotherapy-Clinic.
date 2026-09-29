@@ -25,12 +25,12 @@ const appointmentSchema = new mongoose.Schema(
     date: {
       type: String,
       required: true,
-      match: /^\d{4}-\d{2}-\d{2}$/, // YYYY-MM-DD
+      trim: true,
     },
     timeSlot: {
       type: String,
       required: true,
-      match: /^\d{2}:\d{2}$/, // HH:MM
+      trim: true,
     },
     status: {
       type: String,
