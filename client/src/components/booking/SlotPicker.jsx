@@ -20,7 +20,8 @@ export default function SlotPicker() {
 
   const [patientName, setPatientName] = useState('');
   const [patientEmail, setPatientEmail] = useState(() => localStorage.getItem('patientEmail') || '');
-  const [patientPhone, setPatientPhone] = useState('');
+  const [patientPhone, setPatientPhone] = useState(() => localStorage.getItem('patientPhone') || '');
+  const [patientAddress, setPatientAddress] = useState(() => localStorage.getItem('patientAddress') || '');
   const [bookingError, setBookingError] = useState('');
   const [confirmedAppointment, setConfirmedAppointment] = useState(null);
 
@@ -97,19 +98,23 @@ export default function SlotPicker() {
         timeSlot: selectedSlot,
         patientName: patientName.trim(),
         patientEmail: patientEmail.trim().toLowerCase(),
-        patientPhone: patientPhone.trim()
+        patientPhone: patientPhone.trim(),
+        patientAddress: patientAddress.trim()
       };
 
       const { data } = await axiosInstance.post('/appointments', payload);
       return data;
     },
     onSuccess: (data) => {
-      // Persist patient email for easy lookup on "My Appointments"
+      // Persist patient details for easy lookup on "My Appointments"
       if (patientEmail) {
         localStorage.setItem('patientEmail', patientEmail.trim().toLowerCase());
       }
       if (patientPhone) {
         localStorage.setItem('patientPhone', patientPhone.trim());
+      }
+      if (patientAddress) {
+        localStorage.setItem('patientAddress', patientAddress.trim());
       }
       setConfirmedAppointment(data.appointment || data);
       queryClient.invalidateQueries({ queryKey: ['slots'] });
@@ -373,7 +378,7 @@ export default function SlotPicker() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
                     Full Name *
@@ -411,6 +416,19 @@ export default function SlotPicker() {
                     placeholder="+91 98765 43210"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
+                    className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
+                    Patient Address / City / Village
+                  </label>
+                  <input 
+                    type="text"
+                    placeholder="e.g. Ward No. 4, Nadaun, Hamirpur"
+                    value={patientAddress}
+                    onChange={(e) => setPatientAddress(e.target.value)}
                     className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
                   />
                 </div>

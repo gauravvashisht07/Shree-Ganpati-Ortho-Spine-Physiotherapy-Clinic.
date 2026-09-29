@@ -17,6 +17,11 @@ const appointmentSchema = new mongoose.Schema(
       ref: 'Service',
       required: true,
     },
+    patientAddress: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     date: {
       type: String,
       required: true,

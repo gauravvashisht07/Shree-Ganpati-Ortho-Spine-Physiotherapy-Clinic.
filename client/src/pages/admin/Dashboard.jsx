@@ -134,6 +134,7 @@ function PatientsTab() {
     const name = appt.patientId?.name || appt.patientName || 'Anonymous';
     const email = (appt.patientId?.email || appt.patientEmail || '').toLowerCase();
     const phone = appt.patientId?.phone || appt.patientPhone || '';
+    const address = appt.patientAddress || appt.patientId?.address || '';
     const key = email || phone || name;
 
     if (!patientsMap.has(key)) {
@@ -142,6 +143,7 @@ function PatientsTab() {
         name: name,
         email: email,
         phone: phone,
+        address: address,
         totalAppointments: 1,
         lastAppointmentDate: appt.date,
         lastDoctor: appt.doctorId?.name || 'Doctor',
@@ -151,17 +153,21 @@ function PatientsTab() {
     } else {
       const existing = patientsMap.get(key);
       existing.totalAppointments += 1;
+      if (!existing.address && address) {
+        existing.address = address;
+      }
       if (new Date(appt.date) > new Date(existing.lastAppointmentDate)) {
         existing.lastAppointmentDate = appt.date;
         existing.lastDoctor = appt.doctorId?.name || existing.lastDoctor;
         existing.lastService = appt.serviceId?.name || existing.lastService;
         existing.lastStatus = appt.status || existing.lastStatus;
+        if (address) existing.address = address;
       }
     }
   });
 
   const patients = Array.from(patientsMap.values()).filter(p => {
-    const match = `${p.name} ${p.email} ${p.phone}`.toLowerCase();
+    const match = `${p.name} ${p.email} ${p.phone} ${p.address}`.toLowerCase();
     return match.includes(searchTerm.toLowerCase());
   });
 
@@ -170,6 +176,7 @@ function PatientsTab() {
     patientName: '',
     patientEmail: '',
     patientPhone: '',
+    patientAddress: '',
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
@@ -193,6 +200,7 @@ function PatientsTab() {
         patientName: '',
         patientEmail: '',
         patientPhone: '',
+        patientAddress: '',
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
@@ -210,6 +218,7 @@ function PatientsTab() {
       patientName: '',
       patientEmail: '',
       patientPhone: '',
+      patientAddress: '',
       doctorId: doctors[0]?._id || '',
       serviceId: services[0]?._id || '',
       date: new Date().toISOString().split('T')[0],
@@ -235,6 +244,7 @@ function PatientsTab() {
       patientName: formData.patientName.trim(),
       patientEmail: formData.patientEmail.trim() || `${formData.patientPhone.trim()}@clinic.local`,
       patientPhone: formData.patientPhone.trim(),
+      patientAddress: formData.patientAddress.trim(),
       doctorId: formData.doctorId || doctors[0]?._id,
       serviceId: formData.serviceId || services[0]?._id,
       date: formData.date,
@@ -274,7 +284,7 @@ function PatientsTab() {
           <div className="w-full sm:w-64">
             <input
               type="text"
-              placeholder="Search by name, email, phone..."
+              placeholder="Search by name, email, phone, address..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white border border-gray-200 px-4 py-2.5 rounded-xl font-body text-sm text-ink focus:outline-none focus:border-teal"
@@ -347,6 +357,20 @@ function PatientsTab() {
                     placeholder="e.g. rakesh@example.com (optional)"
                     value={formData.patientEmail}
                     onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
+                  />
+                </div>
+
+                {/* Patient Address */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Patient Address / City / Village
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Nadaun, Hamirpur"
+                    value={formData.patientAddress}
+                    onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
                   />
                 </div>
@@ -464,7 +488,7 @@ function PatientsTab() {
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Patient Name</th>
-                  <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Contact Info</th>
+                  <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Contact &amp; Location</th>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Total Visits</th>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Recent Visit</th>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Recent Service</th>
@@ -487,6 +511,12 @@ function PatientsTab() {
                     <td className="p-6 text-sm text-gray-600">
                       <div>{patient.email || '—'}</div>
                       {patient.phone && <div className="text-xs text-gray-400 font-mono mt-0.5">{patient.phone}</div>}
+                      {patient.address && (
+                        <div className="text-xs text-teal font-medium mt-1 flex items-center gap-1">
+                          <span>📍</span>
+                          <span>{patient.address}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="p-6">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-teal/10 text-teal">
@@ -529,6 +559,11 @@ function PatientsTab() {
                     📞 {patient.phone}
                   </p>
                 )}
+                {patient.address && (
+                  <p className="text-xs text-teal font-medium bg-teal/5 px-3 py-1.5 rounded-lg">
+                    📍 {patient.address}
+                  </p>
+                )}
                 <div className="border-t border-gray-50 pt-3 text-xs text-gray-500 flex justify-between">
                   <span>Last Visit: <strong className="text-ink">{patient.lastAppointmentDate}</strong></span>
                   <span>{patient.lastService}</span>
@@ -549,6 +584,7 @@ function AppointmentsTab() {
     patientName: '',
     patientEmail: '',
     patientPhone: '',
+    patientAddress: '',
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
@@ -581,6 +617,7 @@ function AppointmentsTab() {
         patientName: '',
         patientEmail: '',
         patientPhone: '',
+        patientAddress: '',
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
@@ -598,6 +635,7 @@ function AppointmentsTab() {
       patientName: '',
       patientEmail: '',
       patientPhone: '',
+      patientAddress: '',
       doctorId: doctors[0]?._id || '',
       serviceId: services[0]?._id || '',
       date: new Date().toISOString().split('T')[0],
@@ -623,6 +661,7 @@ function AppointmentsTab() {
       patientName: formData.patientName.trim(),
       patientEmail: formData.patientEmail.trim() || `${formData.patientPhone.trim()}@clinic.local`,
       patientPhone: formData.patientPhone.trim(),
+      patientAddress: formData.patientAddress.trim(),
       doctorId: formData.doctorId || doctors[0]?._id,
       serviceId: formData.serviceId || services[0]?._id,
       date: formData.date,
@@ -759,6 +798,20 @@ function AppointmentsTab() {
                   />
                 </div>
 
+                {/* Patient Address */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Patient Address / City / Village
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Nadaun, Hamirpur"
+                    value={formData.patientAddress}
+                    onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
+                  />
+                </div>
+
                 {/* Assign Doctor */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -812,7 +865,7 @@ function AppointmentsTab() {
                 </div>
 
                 {/* Time Slot Selection */}
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Time Slot *
                   </label>
@@ -870,7 +923,7 @@ function AppointmentsTab() {
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Date / Time</th>
-                  <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Patient</th>
+                  <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Patient &amp; Location</th>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Doctor</th>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Service</th>
                   <th className="p-6 font-bold text-gray-500 uppercase tracking-wider text-xs">Status</th>
@@ -880,8 +933,9 @@ function AppointmentsTab() {
               <tbody>
                 {appointments.map(appt => {
                   const patientName = appt.patientId?.name || appt.patientName || 'Anonymous';
-                  const patientPhone = appt.patientId?.phone || '';
-                  const patientEmail = appt.patientId?.email || '';
+                  const patientPhone = appt.patientId?.phone || appt.patientPhone || '';
+                  const patientEmail = appt.patientId?.email || appt.patientEmail || '';
+                  const patientAddress = appt.patientAddress || appt.patientId?.address || '';
                   const docName = appt.doctorId?.name || 'Assigned Doctor';
                   const serviceName = appt.serviceId?.name || 'General Consultation';
 
@@ -894,6 +948,12 @@ function AppointmentsTab() {
                         <div>{patientName}</div>
                         {(patientPhone || patientEmail) && (
                           <div className="text-xs text-gray-400 font-normal">{patientPhone || patientEmail}</div>
+                        )}
+                        {patientAddress && (
+                          <div className="text-xs text-teal font-medium mt-1 flex items-center gap-1">
+                            <span>📍</span>
+                            <span>{patientAddress}</span>
+                          </div>
                         )}
                       </td>
                       <td className="p-6 text-gray-600">Dr. {docName}</td>
@@ -926,6 +986,7 @@ function AppointmentsTab() {
           <div className="lg:hidden space-y-4">
             {appointments.map(appt => {
               const patientName = appt.patientId?.name || appt.patientName || 'Anonymous';
+              const patientAddress = appt.patientAddress || appt.patientId?.address || '';
               const docName = appt.doctorId?.name || 'Assigned Doctor';
               const serviceName = appt.serviceId?.name || 'General Consultation';
 
@@ -935,6 +996,9 @@ function AppointmentsTab() {
                      <div>
                        <h3 className="font-bold text-ink text-lg">{patientName}</h3>
                        <p className="text-teal text-sm font-medium">{serviceName}</p>
+                       {patientAddress && (
+                         <p className="text-xs text-teal font-medium mt-1">📍 {patientAddress}</p>
+                       )}
                      </div>
                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getStatusStyle(appt.status)}`}>
                        {appt.status}

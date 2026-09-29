@@ -6,7 +6,8 @@ const { sendBookingConfirmation, sendCancellationNotice } = require('../services
 
 exports.createAppointment = async (req, res) => {
   try {
-    let { patientId, patientName, patientEmail, patientPhone, doctorId, serviceId, date, timeSlot } = req.body;
+    let { patientId, patientName, patientEmail, patientPhone, patientAddress, address, doctorId, serviceId, date, timeSlot } = req.body;
+    const finalAddress = (patientAddress || address || '').trim();
 
     if (!doctorId || !date || !timeSlot) {
       return res.status(400).json({ message: 'Doctor, date, and time slot are required.' });
@@ -26,11 +27,20 @@ exports.createAppointment = async (req, res) => {
           name: patientName.trim(),
           email: cleanEmail,
           phone: patientPhone ? patientPhone.trim() : undefined,
+          address: finalAddress || undefined,
           role: 'patient'
         });
-      } else if (patientPhone && !patient.phone) {
-        patient.phone = patientPhone.trim();
-        await patient.save();
+      } else {
+        let changed = false;
+        if (patientPhone && !patient.phone) {
+          patient.phone = patientPhone.trim();
+          changed = true;
+        }
+        if (finalAddress && (!patient.address || patient.address !== finalAddress)) {
+          patient.address = finalAddress;
+          changed = true;
+        }
+        if (changed) await patient.save();
       }
       patientId = patient._id;
     }
@@ -55,6 +65,7 @@ exports.createAppointment = async (req, res) => {
       patientId,
       doctorId,
       serviceId,
+      patientAddress: finalAddress,
       date,
       timeSlot,
       status: 'pending',
@@ -64,7 +75,7 @@ exports.createAppointment = async (req, res) => {
 
     // Populate references
     const populatedAppointment = await Appointment.findById(appointment._id)
-      .populate('patientId', 'name email phone')
+      .populate('patientId', 'name email phone address')
       .populate('doctorId', 'name')
       .populate('serviceId', 'name duration price');
 
@@ -99,7 +110,7 @@ exports.getAll = async (req, res) => {
     if (doctorId) query.doctorId = doctorId;
 
     const appointments = await Appointment.find(query)
-      .populate('patientId', 'name email phone')
+      .populate('patientId', 'name email phone address')
       .populate('doctorId', 'name email')
       .populate('serviceId', 'name duration price')
       .sort({ date: -1, timeSlot: 1 });
@@ -143,7 +154,7 @@ exports.lookupAppointments = async (req, res) => {
 
     const patientIds = patients.map(p => p._id);
     const appointments = await Appointment.find({ patientId: { $in: patientIds } })
-      .populate('patientId', 'name email phone')
+      .populate('patientId', 'name email phone address')
       .populate('doctorId', 'name photoUrl')
       .populate('serviceId', 'name duration price')
       .sort({ date: -1, timeSlot: 1 });
