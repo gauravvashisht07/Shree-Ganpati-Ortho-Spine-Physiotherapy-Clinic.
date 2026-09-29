@@ -22,6 +22,10 @@ const appointmentSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    patientAge: {
+      type: Number,
+      min: 0,
+    },
     date: {
       type: String,
       required: true,

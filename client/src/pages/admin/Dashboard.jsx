@@ -135,6 +135,7 @@ function PatientsTab() {
     const email = (appt.patientId?.email || appt.patientEmail || '').toLowerCase();
     const phone = appt.patientId?.phone || appt.patientPhone || '';
     const address = appt.patientAddress || appt.patientId?.address || '';
+    const age = appt.patientAge || appt.patientId?.age || '';
     const key = email || phone || name;
 
     if (!patientsMap.has(key)) {
@@ -144,6 +145,7 @@ function PatientsTab() {
         email: email,
         phone: phone,
         address: address,
+        age: age,
         totalAppointments: 1,
         lastAppointmentDate: appt.date,
         lastDoctor: appt.doctorId?.name || 'Doctor',
@@ -156,18 +158,22 @@ function PatientsTab() {
       if (!existing.address && address) {
         existing.address = address;
       }
+      if (!existing.age && age) {
+        existing.age = age;
+      }
       if (new Date(appt.date) > new Date(existing.lastAppointmentDate)) {
         existing.lastAppointmentDate = appt.date;
         existing.lastDoctor = appt.doctorId?.name || existing.lastDoctor;
         existing.lastService = appt.serviceId?.name || existing.lastService;
         existing.lastStatus = appt.status || existing.lastStatus;
         if (address) existing.address = address;
+        if (age) existing.age = age;
       }
     }
   });
 
   const patients = Array.from(patientsMap.values()).filter(p => {
-    const match = `${p.name} ${p.email} ${p.phone} ${p.address}`.toLowerCase();
+    const match = `${p.name} ${p.email} ${p.phone} ${p.address} ${p.age ? p.age + ' yrs' : ''}`.toLowerCase();
     return match.includes(searchTerm.toLowerCase());
   });
 
@@ -177,6 +183,7 @@ function PatientsTab() {
     patientEmail: '',
     patientPhone: '',
     patientAddress: '',
+    patientAge: '',
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
@@ -201,6 +208,7 @@ function PatientsTab() {
         patientEmail: '',
         patientPhone: '',
         patientAddress: '',
+        patientAge: '',
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
@@ -219,6 +227,7 @@ function PatientsTab() {
       patientEmail: '',
       patientPhone: '',
       patientAddress: '',
+      patientAge: '',
       doctorId: doctors[0]?._id || '',
       serviceId: services[0]?._id || '',
       date: new Date().toISOString().split('T')[0],
@@ -245,6 +254,7 @@ function PatientsTab() {
       patientEmail: formData.patientEmail.trim() || `${formData.patientPhone.trim()}@clinic.local`,
       patientPhone: formData.patientPhone.trim(),
       patientAddress: formData.patientAddress.trim(),
+      patientAge: formData.patientAge ? Number(formData.patientAge) : undefined,
       doctorId: formData.doctorId || doctors[0]?._id,
       serviceId: formData.serviceId || services[0]?._id,
       date: formData.date,
@@ -284,7 +294,7 @@ function PatientsTab() {
           <div className="w-full sm:w-64">
             <input
               type="text"
-              placeholder="Search by name, email, phone, address..."
+              placeholder="Search by name, email, phone, address, age..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white border border-gray-200 px-4 py-2.5 rounded-xl font-body text-sm text-ink focus:outline-none focus:border-teal"
@@ -333,6 +343,22 @@ function PatientsTab() {
                   />
                 </div>
 
+                {/* Patient Age */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Age (Years)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    placeholder="e.g. 35"
+                    value={formData.patientAge}
+                    onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
+                  />
+                </div>
+
                 {/* Patient Phone */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -362,7 +388,7 @@ function PatientsTab() {
                 </div>
 
                 {/* Patient Address */}
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Patient Address / City / Village
                   </label>
@@ -503,7 +529,14 @@ function PatientsTab() {
                           {patient.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div>{patient.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span>{patient.name}</span>
+                            {patient.age && (
+                              <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                {patient.age} yrs
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[10px] text-teal font-bold uppercase tracking-wider">Verified Patient</span>
                         </div>
                       </div>
@@ -546,7 +579,14 @@ function PatientsTab() {
                       {patient.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-bold text-ink text-base">{patient.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-ink text-base">{patient.name}</h3>
+                        {patient.age && (
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {patient.age} yrs
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500">{patient.email || 'No email'}</p>
                     </div>
                   </div>
@@ -585,6 +625,7 @@ function AppointmentsTab() {
     patientEmail: '',
     patientPhone: '',
     patientAddress: '',
+    patientAge: '',
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
@@ -618,6 +659,7 @@ function AppointmentsTab() {
         patientEmail: '',
         patientPhone: '',
         patientAddress: '',
+        patientAge: '',
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
@@ -636,6 +678,7 @@ function AppointmentsTab() {
       patientEmail: '',
       patientPhone: '',
       patientAddress: '',
+      patientAge: '',
       doctorId: doctors[0]?._id || '',
       serviceId: services[0]?._id || '',
       date: new Date().toISOString().split('T')[0],
@@ -662,6 +705,7 @@ function AppointmentsTab() {
       patientEmail: formData.patientEmail.trim() || `${formData.patientPhone.trim()}@clinic.local`,
       patientPhone: formData.patientPhone.trim(),
       patientAddress: formData.patientAddress.trim(),
+      patientAge: formData.patientAge ? Number(formData.patientAge) : undefined,
       doctorId: formData.doctorId || doctors[0]?._id,
       serviceId: formData.serviceId || services[0]?._id,
       date: formData.date,
@@ -770,6 +814,22 @@ function AppointmentsTab() {
                   />
                 </div>
 
+                {/* Patient Age */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Age (Years)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    placeholder="e.g. 35"
+                    value={formData.patientAge}
+                    onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
+                  />
+                </div>
+
                 {/* Patient Phone */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -799,7 +859,7 @@ function AppointmentsTab() {
                 </div>
 
                 {/* Patient Address */}
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Patient Address / City / Village
                   </label>
@@ -936,6 +996,7 @@ function AppointmentsTab() {
                   const patientPhone = appt.patientId?.phone || appt.patientPhone || '';
                   const patientEmail = appt.patientId?.email || appt.patientEmail || '';
                   const patientAddress = appt.patientAddress || appt.patientId?.address || '';
+                  const patientAge = appt.patientAge || appt.patientId?.age || '';
                   const docName = appt.doctorId?.name || 'Assigned Doctor';
                   const serviceName = appt.serviceId?.name || 'General Consultation';
 
@@ -945,7 +1006,14 @@ function AppointmentsTab() {
                         {appt.date} <span className="text-gray-400 ml-2 font-mono font-medium">{appt.timeSlot}</span>
                       </td>
                       <td className="p-6 font-bold">
-                        <div>{patientName}</div>
+                        <div className="flex items-center gap-2">
+                          <span>{patientName}</span>
+                          {patientAge && (
+                            <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {patientAge} yrs
+                            </span>
+                          )}
+                        </div>
                         {(patientPhone || patientEmail) && (
                           <div className="text-xs text-gray-400 font-normal">{patientPhone || patientEmail}</div>
                         )}
@@ -987,6 +1055,7 @@ function AppointmentsTab() {
             {appointments.map(appt => {
               const patientName = appt.patientId?.name || appt.patientName || 'Anonymous';
               const patientAddress = appt.patientAddress || appt.patientId?.address || '';
+              const patientAge = appt.patientAge || appt.patientId?.age || '';
               const docName = appt.doctorId?.name || 'Assigned Doctor';
               const serviceName = appt.serviceId?.name || 'General Consultation';
 
@@ -994,7 +1063,14 @@ function AppointmentsTab() {
                 <div key={appt._id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
                   <div className="flex justify-between items-start">
                      <div>
-                       <h3 className="font-bold text-ink text-lg">{patientName}</h3>
+                       <div className="flex items-center gap-2">
+                         <h3 className="font-bold text-ink text-lg">{patientName}</h3>
+                         {patientAge && (
+                           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                             {patientAge} yrs
+                           </span>
+                         )}
+                       </div>
                        <p className="text-teal text-sm font-medium">{serviceName}</p>
                        {patientAddress && (
                          <p className="text-xs text-teal font-medium mt-1">📍 {patientAddress}</p>

@@ -90,6 +90,7 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
   const patientPhone = appointment.patientId?.phone || appointment.patientPhone || '—';
   const patientEmail = appointment.patientId?.email || appointment.patientEmail || '—';
   const patientAddress = appointment.patientAddress || appointment.patientId?.address || '';
+  const patientAge = appointment.patientAge || appointment.patientId?.age || '';
   const doctorName = appointment.doctorId?.name || 'Dr. Assigned Specialist';
   const doctorSpec = appointment.doctorId?.specialization 
     ? (Array.isArray(appointment.doctorId.specialization) ? appointment.doctorId.specialization.join(', ') : appointment.doctorId.specialization)
@@ -164,7 +165,9 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
           <div className="grid grid-cols-2 gap-4 bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Patient Details</span>
-              <strong className="text-base text-ink font-display block">{patientName}</strong>
+              <strong className="text-base text-ink font-display block">
+                {patientName} {patientAge ? <span className="text-xs font-normal text-gray-500">({patientAge} yrs)</span> : ''}
+              </strong>
               <div className="flex flex-col text-xs text-gray-500 font-mono mt-0.5">
                 {patientPhone !== '—' && <span>{patientPhone}</span>}
                 {patientAddress && (

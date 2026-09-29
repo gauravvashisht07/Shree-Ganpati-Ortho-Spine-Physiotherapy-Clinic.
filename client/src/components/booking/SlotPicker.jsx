@@ -22,6 +22,7 @@ export default function SlotPicker() {
   const [patientEmail, setPatientEmail] = useState(() => localStorage.getItem('patientEmail') || '');
   const [patientPhone, setPatientPhone] = useState(() => localStorage.getItem('patientPhone') || '');
   const [patientAddress, setPatientAddress] = useState(() => localStorage.getItem('patientAddress') || '');
+  const [patientAge, setPatientAge] = useState(() => localStorage.getItem('patientAge') || '');
   const [bookingError, setBookingError] = useState('');
   const [confirmedAppointment, setConfirmedAppointment] = useState(null);
 
@@ -99,7 +100,8 @@ export default function SlotPicker() {
         patientName: patientName.trim(),
         patientEmail: patientEmail.trim().toLowerCase(),
         patientPhone: patientPhone.trim(),
-        patientAddress: patientAddress.trim()
+        patientAddress: patientAddress.trim(),
+        patientAge: patientAge ? Number(patientAge) : undefined
       };
 
       const { data } = await axiosInstance.post('/appointments', payload);
@@ -115,6 +117,9 @@ export default function SlotPicker() {
       }
       if (patientAddress) {
         localStorage.setItem('patientAddress', patientAddress.trim());
+      }
+      if (patientAge) {
+        localStorage.setItem('patientAge', patientAge.trim());
       }
       setConfirmedAppointment(data.appointment || data);
       queryClient.invalidateQueries({ queryKey: ['slots'] });
@@ -395,6 +400,21 @@ export default function SlotPicker() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
+                    Age (Years)
+                  </label>
+                  <input 
+                    type="number"
+                    min="1"
+                    max="120"
+                    placeholder="e.g. 32"
+                    value={patientAge}
+                    onChange={(e) => setPatientAge(e.target.value)}
+                    className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
                     Email Address *
                   </label>
                   <input 
@@ -420,7 +440,7 @@ export default function SlotPicker() {
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
                     Patient Address / City / Village
                   </label>
