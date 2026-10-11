@@ -3,23 +3,52 @@ import axiosInstance from '../api/axiosInstance';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('adminToken'));
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('adminUser');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
+// Helper to check if a JWT token exists, is well-formed, and not expired
+const getValidAdminToken = () => {
+  try {
+    const savedToken = localStorage.getItem('adminToken');
+    if (!savedToken) return null;
+    const parts = savedToken.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
       return null;
     }
-  });
-  const [loading, setLoading] = useState(true);
+    return savedToken;
+  } catch {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    return null;
+  }
+};
+
+const getValidAdminUser = () => {
+  try {
+    const validToken = getValidAdminToken();
+    if (!validToken) return null;
+    const saved = localStorage.getItem('adminUser');
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
+export function AuthProvider({ children }) {
+  const [token, setToken] = useState(() => getValidAdminToken());
+  const [user, setUser] = useState(() => getValidAdminUser());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Synchronize initial state
-    const savedToken = localStorage.getItem('adminToken');
-    if (savedToken) {
-      setToken(savedToken);
+    // Synchronize and re-validate token
+    const validToken = getValidAdminToken();
+    if (!validToken) {
+      setToken(null);
+      setUser(null);
+    } else {
+      setToken(validToken);
+      setUser(getValidAdminUser());
     }
     setLoading(false);
   }, []);

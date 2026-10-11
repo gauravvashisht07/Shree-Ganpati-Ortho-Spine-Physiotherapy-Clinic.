@@ -13,7 +13,15 @@ import DoctorProfile from './pages/DoctorProfile';
 import Blog from './pages/Blog';
 import BlogDetail from './pages/BlogDetail';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes fresh
+      gcTime: 1000 * 60 * 30, // 30 minutes cache retention
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 import BookingPreview from './components/home/BookingPreview';
 import ReviewsSection from './components/home/ReviewsSection';
