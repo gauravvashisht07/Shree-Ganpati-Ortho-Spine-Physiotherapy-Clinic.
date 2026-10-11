@@ -91,6 +91,7 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
   const patientEmail = appointment.patientId?.email || appointment.patientEmail || '—';
   const patientAddress = appointment.patientAddress || appointment.patientId?.address || '';
   const patientAge = appointment.patientAge || appointment.patientId?.age || '';
+  const patientGender = appointment.patientGender || appointment.patientId?.gender || '';
   const doctorName = appointment.doctorId?.name || 'Dr. Assigned Specialist';
   const doctorSpec = appointment.doctorId?.specialization 
     ? (Array.isArray(appointment.doctorId.specialization) ? appointment.doctorId.specialization.join(', ') : appointment.doctorId.specialization)
@@ -166,7 +167,12 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Patient Details</span>
               <strong className="text-base text-ink font-display block">
-                {patientName} {patientAge ? <span className="text-xs font-normal text-gray-500">({patientAge} yrs)</span> : ''}
+                {patientName} 
+                {(patientAge || (patientGender && patientGender !== 'prefer-not-to-say')) && (
+                  <span className="text-xs font-normal text-gray-500 ml-1 capitalize">
+                    ({[patientAge ? `${patientAge} yrs` : null, patientGender && patientGender !== 'prefer-not-to-say' ? patientGender : null].filter(Boolean).join(', ')})
+                  </span>
+                )}
               </strong>
               <div className="flex flex-col text-xs text-gray-500 font-mono mt-0.5">
                 {patientPhone !== '—' && <span>{patientPhone}</span>}

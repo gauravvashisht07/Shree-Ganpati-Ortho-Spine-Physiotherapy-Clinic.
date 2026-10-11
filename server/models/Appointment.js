@@ -26,6 +26,11 @@ const appointmentSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
+    patientGender: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     date: {
       type: String,
       required: true,

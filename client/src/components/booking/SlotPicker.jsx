@@ -23,6 +23,7 @@ export default function SlotPicker() {
   const [patientPhone, setPatientPhone] = useState(() => localStorage.getItem('patientPhone') || '');
   const [patientAddress, setPatientAddress] = useState(() => localStorage.getItem('patientAddress') || '');
   const [patientAge, setPatientAge] = useState(() => localStorage.getItem('patientAge') || '');
+  const [patientGender, setPatientGender] = useState(() => localStorage.getItem('patientGender') || 'male');
   const [bookingError, setBookingError] = useState('');
   const [confirmedAppointment, setConfirmedAppointment] = useState(null);
 
@@ -101,7 +102,8 @@ export default function SlotPicker() {
         patientEmail: patientEmail.trim().toLowerCase(),
         patientPhone: patientPhone.trim(),
         patientAddress: patientAddress.trim(),
-        patientAge: patientAge ? Number(patientAge) : undefined
+        patientAge: patientAge ? Number(patientAge) : undefined,
+        patientGender: patientGender || 'prefer-not-to-say'
       };
 
       const { data } = await axiosInstance.post('/appointments', payload);
@@ -120,6 +122,9 @@ export default function SlotPicker() {
       }
       if (patientAge) {
         localStorage.setItem('patientAge', patientAge.trim());
+      }
+      if (patientGender) {
+        localStorage.setItem('patientGender', patientGender.trim());
       }
       setConfirmedAppointment(data.appointment || data);
       queryClient.invalidateQueries({ queryKey: ['slots'] });
@@ -391,7 +396,7 @@ export default function SlotPicker() {
                   <input 
                     type="text"
                     required
-                    placeholder="John Doe"
+                    placeholder="e.g. Sunil Kumar"
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
                     className="w-full bg-white border border-gray-200 p-3.5 rounded-xl font-bold text-ink focus:border-coral focus:outline-none"
@@ -406,9 +411,38 @@ export default function SlotPicker() {
                     type="number"
                     min="1"
                     max="120"
-                    placeholder="e.g. 32"
+                    placeholder="e.g. 36"
                     value={patientAge}
                     onChange={(e) => setPatientAge(e.target.value)}
+                    className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
+                    Gender
+                  </label>
+                  <select 
+                    value={patientGender}
+                    onChange={(e) => setPatientGender(e.target.value)}
+                    className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none capitalize"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
+                    Phone Number
+                  </label>
+                  <input 
+                    type="tel"
+                    placeholder="+91 98172 34567"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(e.target.value)}
                     className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
                   />
                 </div>
@@ -420,7 +454,7 @@ export default function SlotPicker() {
                   <input 
                     type="email"
                     required
-                    placeholder="john@example.com"
+                    placeholder="sunil.kumar@example.com"
                     value={patientEmail}
                     onChange={(e) => setPatientEmail(e.target.value)}
                     className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
@@ -428,19 +462,6 @@ export default function SlotPicker() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
-                    Phone Number
-                  </label>
-                  <input 
-                    type="tel"
-                    placeholder="+91 98765 43210"
-                    value={patientPhone}
-                    onChange={(e) => setPatientPhone(e.target.value)}
-                    className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
                     Patient Address / City / Village
                   </label>

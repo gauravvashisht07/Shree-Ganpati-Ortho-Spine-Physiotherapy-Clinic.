@@ -136,6 +136,7 @@ function PatientsTab() {
     const phone = appt.patientId?.phone || appt.patientPhone || '';
     const address = appt.patientAddress || appt.patientId?.address || '';
     const age = appt.patientAge || appt.patientId?.age || '';
+    const gender = appt.patientGender || appt.patientId?.gender || '';
     const key = email || phone || name;
 
     if (!patientsMap.has(key)) {
@@ -146,6 +147,7 @@ function PatientsTab() {
         phone: phone,
         address: address,
         age: age,
+        gender: gender,
         totalAppointments: 1,
         lastAppointmentDate: appt.date,
         lastDoctor: appt.doctorId?.name || 'Doctor',
@@ -161,6 +163,9 @@ function PatientsTab() {
       if (!existing.age && age) {
         existing.age = age;
       }
+      if (!existing.gender && gender) {
+        existing.gender = gender;
+      }
       if (new Date(appt.date) > new Date(existing.lastAppointmentDate)) {
         existing.lastAppointmentDate = appt.date;
         existing.lastDoctor = appt.doctorId?.name || existing.lastDoctor;
@@ -168,12 +173,13 @@ function PatientsTab() {
         existing.lastStatus = appt.status || existing.lastStatus;
         if (address) existing.address = address;
         if (age) existing.age = age;
+        if (gender) existing.gender = gender;
       }
     }
   });
 
   const patients = Array.from(patientsMap.values()).filter(p => {
-    const match = `${p.name} ${p.email} ${p.phone} ${p.address} ${p.age ? p.age + ' yrs' : ''}`.toLowerCase();
+    const match = `${p.name} ${p.email} ${p.phone} ${p.address} ${p.gender || ''} ${p.age ? p.age + ' yrs' : ''}`.toLowerCase();
     return match.includes(searchTerm.toLowerCase());
   });
 
@@ -184,10 +190,11 @@ function PatientsTab() {
     patientPhone: '',
     patientAddress: '',
     patientAge: '',
+    patientGender: 'male',
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
-    timeSlot: '10:00 AM'
+    timeSlot: '09:30 AM'
   });
   const [formError, setFormError] = useState('');
   const queryClient = useQueryClient();
@@ -209,10 +216,11 @@ function PatientsTab() {
         patientPhone: '',
         patientAddress: '',
         patientAge: '',
+        patientGender: 'male',
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
-        timeSlot: '10:00 AM'
+        timeSlot: '09:30 AM'
       });
       setFormError('');
     },
@@ -228,10 +236,11 @@ function PatientsTab() {
       patientPhone: '',
       patientAddress: '',
       patientAge: '',
+      patientGender: 'male',
       doctorId: doctors[0]?._id || '',
       serviceId: services[0]?._id || '',
       date: new Date().toISOString().split('T')[0],
-      timeSlot: '10:00 AM'
+      timeSlot: '09:30 AM'
     });
     setFormError('');
     setShowAddModal(true);
@@ -255,6 +264,7 @@ function PatientsTab() {
       patientPhone: formData.patientPhone.trim(),
       patientAddress: formData.patientAddress.trim(),
       patientAge: formData.patientAge ? Number(formData.patientAge) : undefined,
+      patientGender: formData.patientGender || 'prefer-not-to-say',
       doctorId: formData.doctorId || doctors[0]?._id,
       serviceId: formData.serviceId || services[0]?._id,
       date: formData.date,
@@ -266,10 +276,8 @@ function PatientsTab() {
   };
 
   const timeOptions = [
-    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-    '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM',
-    '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
-    '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM'
+    '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM'
   ];
 
   return (
@@ -336,7 +344,7 @@ function PatientsTab() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Rakesh Kumar"
+                    placeholder="e.g. Amit Thakur"
                     value={formData.patientName}
                     onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
@@ -352,11 +360,28 @@ function PatientsTab() {
                     type="number"
                     min="1"
                     max="120"
-                    placeholder="e.g. 35"
+                    placeholder="e.g. 29"
                     value={formData.patientAge}
                     onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
                   />
+                </div>
+
+                {/* Patient Gender */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Gender
+                  </label>
+                  <select
+                    value={formData.patientGender}
+                    onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm capitalize"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
                 </div>
 
                 {/* Patient Phone */}
@@ -366,7 +391,7 @@ function PatientsTab() {
                   </label>
                   <input
                     type="tel"
-                    placeholder="e.g. +91 98765 43210"
+                    placeholder="e.g. +91 98160 12345"
                     value={formData.patientPhone}
                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
@@ -380,7 +405,7 @@ function PatientsTab() {
                   </label>
                   <input
                     type="email"
-                    placeholder="e.g. rakesh@example.com (optional)"
+                    placeholder="e.g. amit.thakur@example.com (optional)"
                     value={formData.patientEmail}
                     onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
@@ -388,13 +413,13 @@ function PatientsTab() {
                 </div>
 
                 {/* Patient Address */}
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Patient Address / City / Village
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Nadaun, Hamirpur"
+                    placeholder="e.g. Ward No. 3, Nadaun, Hamirpur"
                     value={formData.patientAddress}
                     onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
@@ -529,11 +554,16 @@ function PatientsTab() {
                           {patient.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span>{patient.name}</span>
                             {patient.age && (
                               <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                                 {patient.age} yrs
+                              </span>
+                            )}
+                            {patient.gender && patient.gender !== 'prefer-not-to-say' && (
+                              <span className="text-[11px] font-medium text-teal bg-teal/5 px-2 py-0.5 rounded-full capitalize">
+                                {patient.gender}
                               </span>
                             )}
                           </div>
@@ -579,11 +609,16 @@ function PatientsTab() {
                       {patient.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <h3 className="font-bold text-ink text-base">{patient.name}</h3>
                         {patient.age && (
                           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                             {patient.age} yrs
+                          </span>
+                        )}
+                        {patient.gender && patient.gender !== 'prefer-not-to-say' && (
+                          <span className="text-[11px] font-medium text-teal bg-teal/5 px-2 py-0.5 rounded-full capitalize">
+                            {patient.gender}
                           </span>
                         )}
                       </div>
@@ -626,10 +661,11 @@ function AppointmentsTab() {
     patientPhone: '',
     patientAddress: '',
     patientAge: '',
+    patientGender: 'male',
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
-    timeSlot: '10:00 AM'
+    timeSlot: '09:30 AM'
   });
   const [formError, setFormError] = useState('');
   const queryClient = useQueryClient();
@@ -660,10 +696,11 @@ function AppointmentsTab() {
         patientPhone: '',
         patientAddress: '',
         patientAge: '',
+        patientGender: 'male',
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
-        timeSlot: '10:00 AM'
+        timeSlot: '09:30 AM'
       });
       setFormError('');
     },
@@ -679,10 +716,11 @@ function AppointmentsTab() {
       patientPhone: '',
       patientAddress: '',
       patientAge: '',
+      patientGender: 'male',
       doctorId: doctors[0]?._id || '',
       serviceId: services[0]?._id || '',
       date: new Date().toISOString().split('T')[0],
-      timeSlot: '10:00 AM'
+      timeSlot: '09:30 AM'
     });
     setFormError('');
     setShowAddModal(true);
@@ -706,6 +744,7 @@ function AppointmentsTab() {
       patientPhone: formData.patientPhone.trim(),
       patientAddress: formData.patientAddress.trim(),
       patientAge: formData.patientAge ? Number(formData.patientAge) : undefined,
+      patientGender: formData.patientGender || 'prefer-not-to-say',
       doctorId: formData.doctorId || doctors[0]?._id,
       serviceId: formData.serviceId || services[0]?._id,
       date: formData.date,
@@ -737,10 +776,8 @@ function AppointmentsTab() {
   };
 
   const timeOptions = [
-    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-    '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM',
-    '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
-    '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM'
+    '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM'
   ];
 
   return (
@@ -807,7 +844,7 @@ function AppointmentsTab() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Rakesh Kumar"
+                    placeholder="e.g. Rohit Verma"
                     value={formData.patientName}
                     onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
@@ -823,11 +860,28 @@ function AppointmentsTab() {
                     type="number"
                     min="1"
                     max="120"
-                    placeholder="e.g. 35"
+                    placeholder="e.g. 34"
                     value={formData.patientAge}
                     onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
                   />
+                </div>
+
+                {/* Patient Gender */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Gender
+                  </label>
+                  <select
+                    value={formData.patientGender}
+                    onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm capitalize"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
                 </div>
 
                 {/* Patient Phone */}
@@ -837,7 +891,7 @@ function AppointmentsTab() {
                   </label>
                   <input
                     type="tel"
-                    placeholder="e.g. +91 98765 43210"
+                    placeholder="e.g. +91 98055 87654"
                     value={formData.patientPhone}
                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
@@ -851,7 +905,7 @@ function AppointmentsTab() {
                   </label>
                   <input
                     type="email"
-                    placeholder="e.g. rakesh@example.com (optional)"
+                    placeholder="e.g. rohit.verma@example.com (optional)"
                     value={formData.patientEmail}
                     onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
@@ -859,13 +913,13 @@ function AppointmentsTab() {
                 </div>
 
                 {/* Patient Address */}
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Patient Address / City / Village
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Nadaun, Hamirpur"
+                    placeholder="e.g. Main Bazar, Nadaun, Hamirpur"
                     value={formData.patientAddress}
                     onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
@@ -997,6 +1051,7 @@ function AppointmentsTab() {
                   const patientEmail = appt.patientId?.email || appt.patientEmail || '';
                   const patientAddress = appt.patientAddress || appt.patientId?.address || '';
                   const patientAge = appt.patientAge || appt.patientId?.age || '';
+                  const patientGender = appt.patientGender || appt.patientId?.gender || '';
                   const docName = appt.doctorId?.name || 'Assigned Doctor';
                   const serviceName = appt.serviceId?.name || 'General Consultation';
 
@@ -1011,6 +1066,11 @@ function AppointmentsTab() {
                           {patientAge && (
                             <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                               {patientAge} yrs
+                            </span>
+                          )}
+                          {patientGender && patientGender !== 'prefer-not-to-say' && (
+                            <span className="text-xs font-normal text-teal bg-teal/10 px-2 py-0.5 rounded-full capitalize">
+                              {patientGender}
                             </span>
                           )}
                         </div>
@@ -1056,6 +1116,7 @@ function AppointmentsTab() {
               const patientName = appt.patientId?.name || appt.patientName || 'Anonymous';
               const patientAddress = appt.patientAddress || appt.patientId?.address || '';
               const patientAge = appt.patientAge || appt.patientId?.age || '';
+              const patientGender = appt.patientGender || appt.patientId?.gender || '';
               const docName = appt.doctorId?.name || 'Assigned Doctor';
               const serviceName = appt.serviceId?.name || 'General Consultation';
 
@@ -1063,11 +1124,16 @@ function AppointmentsTab() {
                 <div key={appt._id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
                   <div className="flex justify-between items-start">
                      <div>
-                       <div className="flex items-center gap-2">
+                       <div className="flex items-center gap-2 flex-wrap">
                          <h3 className="font-bold text-ink text-lg">{patientName}</h3>
                          {patientAge && (
                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                              {patientAge} yrs
+                           </span>
+                         )}
+                         {patientGender && patientGender !== 'prefer-not-to-say' && (
+                           <span className="text-xs text-teal bg-teal/10 px-2 py-0.5 rounded-full capitalize">
+                             {patientGender}
                            </span>
                          )}
                        </div>
