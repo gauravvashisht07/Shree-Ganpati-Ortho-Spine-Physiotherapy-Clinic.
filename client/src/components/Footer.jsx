@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Footer() {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   const handleLocationClick = () => {
     if (location.pathname === '/') {
@@ -41,7 +43,7 @@ export default function Footer() {
           <Link to="/blog" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Blog</Link>
           <Link to="/book" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Booking</Link>
           <Link to="/#location" onClick={handleLocationClick} className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Location</Link>
-          <Link to="/admin" className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Admin</Link>
+          <Link to={isAuthenticated ? '/admin' : '/admin/login'} className="text-gray-700 hover:text-[#FF6F4D] text-sm font-semibold transition-colors">Admin</Link>
         </div>
       </div>
     </footer>

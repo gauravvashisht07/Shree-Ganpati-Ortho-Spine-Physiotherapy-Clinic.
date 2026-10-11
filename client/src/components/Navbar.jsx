@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   const links = [
     { to: '/services', label: 'Services' },
@@ -11,7 +13,7 @@ export default function Navbar() {
     { to: '/book', label: 'Booking' },
     { to: '/#location', label: 'Location' },
     { to: '/my-appointments', label: 'My Appointments' },
-    { to: '/admin', label: 'Admin' },
+    { to: isAuthenticated ? '/admin' : '/admin/login', label: 'Admin' },
   ];
 
   const handleLinkClick = (to) => {
