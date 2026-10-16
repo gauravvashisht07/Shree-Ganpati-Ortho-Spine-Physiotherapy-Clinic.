@@ -13,6 +13,10 @@ const createTransporter = () => {
 
 const sendBookingConfirmation = async (appointment) => {
   try {
+    const patientEmail = appointment.patientId?.email;
+    if (!patientEmail || patientEmail.endsWith('@clinic.local')) {
+      return;
+    }
     const transporter = createTransporter();
     
     // Format the email content
@@ -31,11 +35,11 @@ const sendBookingConfirmation = async (appointment) => {
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM || '"Shree Ganpati Clinic" <hello@clinic.com>',
-      to: appointment.patientId.email,
+      to: patientEmail,
       subject: 'Appointment Confirmation - Shree Ganpati Ortho & Spine',
       html: htmlContent,
     });
-    console.log(`Booking confirmation email sent to ${appointment.patientId.email}`);
+    console.log(`Booking confirmation email sent to ${patientEmail}`);
   } catch (error) {
     console.error('Failed to send booking confirmation email:', error.message);
   }
@@ -43,6 +47,10 @@ const sendBookingConfirmation = async (appointment) => {
 
 const sendCancellationNotice = async (appointment) => {
   try {
+    const patientEmail = appointment.patientId?.email;
+    if (!patientEmail || patientEmail.endsWith('@clinic.local')) {
+      return;
+    }
     const transporter = createTransporter();
     
     const htmlContent = `
@@ -54,11 +62,11 @@ const sendCancellationNotice = async (appointment) => {
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM || '"Shree Ganpati Clinic" <hello@clinic.com>',
-      to: appointment.patientId.email,
+      to: patientEmail,
       subject: 'Appointment Cancelled - Shree Ganpati Ortho & Spine',
       html: htmlContent,
     });
-    console.log(`Cancellation email sent to ${appointment.patientId.email}`);
+    console.log(`Cancellation email sent to ${patientEmail}`);
   } catch (error) {
     console.error('Failed to send cancellation email:', error.message);
   }

@@ -49,18 +49,40 @@ exports.createAppointment = async (req, res) => {
 
     // Resolve or create patient
     if (!patientId) {
-      if (!patientName || !patientEmail) {
-        return res.status(400).json({ message: 'Patient name and email are required for booking.' });
+      if (!patientName || !patientName.trim()) {
+        return res.status(400).json({ message: 'Patient name is required for booking.' });
       }
 
-      const cleanEmail = patientEmail.trim().toLowerCase();
-      let patient = await Patient.findOne({ email: cleanEmail });
+      const cleanName = patientName.trim();
+      const rawEmail = (patientEmail || '').trim().toLowerCase();
+      const rawPhone = (patientPhone || '').trim();
+
+      // Determine cleanEmail to guarantee database uniqueness and consistency
+      let cleanEmail = rawEmail;
+      if (!cleanEmail) {
+        if (rawPhone) {
+          const cleanPhoneDigits = rawPhone.replace(/[^\d+]/g, '');
+          cleanEmail = `${cleanPhoneDigits}@clinic.local`;
+        } else {
+          cleanEmail = `patient_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@clinic.local`;
+        }
+      }
+
+      let patient = null;
+      if (rawEmail) {
+        patient = await Patient.findOne({ email: rawEmail });
+      } else if (rawPhone) {
+        patient = await Patient.findOne({ phone: rawPhone });
+        if (!patient) {
+          patient = await Patient.findOne({ email: cleanEmail });
+        }
+      }
 
       if (!patient) {
         patient = await Patient.create({
-          name: patientName.trim(),
+          name: cleanName,
           email: cleanEmail,
-          phone: patientPhone ? patientPhone.trim() : undefined,
+          phone: rawPhone || undefined,
           address: finalAddress || undefined,
           age: finalAge,
           gender: finalGender || undefined,
@@ -68,8 +90,12 @@ exports.createAppointment = async (req, res) => {
         });
       } else {
         let changed = false;
-        if (patientPhone && !patient.phone) {
-          patient.phone = patientPhone.trim();
+        if (rawPhone && !patient.phone) {
+          patient.phone = rawPhone;
+          changed = true;
+        }
+        if (rawEmail && (!patient.email || patient.email.endsWith('@clinic.local'))) {
+          patient.email = rawEmail;
           changed = true;
         }
         if (finalAddress && (!patient.address || patient.address !== finalAddress)) {
@@ -176,7 +202,7 @@ exports.lookupAppointments = async (req, res) => {
   try {
     const { search } = req.query;
     if (!search || !search.trim()) {
-      return res.status(400).json({ message: 'Phone number or email is required' });
+      return res.status(400).json({ message: 'Phone number, email, or patient name is required' });
     }
 
     const term = search.trim();
@@ -186,7 +212,8 @@ exports.lookupAppointments = async (req, res) => {
     const conditions = [
       { email: term.toLowerCase() },
       { phone: term },
-      { phone: term.replace(/\s+/g, '') }
+      { phone: term.replace(/\s+/g, '') },
+      { name: { $regex: new RegExp(term, 'i') } }
     ];
 
     // If search contains phone digits, match by last 10 digits or digits sequence

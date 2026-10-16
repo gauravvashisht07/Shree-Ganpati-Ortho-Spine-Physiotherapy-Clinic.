@@ -151,7 +151,7 @@ export default function SlotPicker() {
   let progressStep = 1;
   if (selectedDoctor) progressStep = 2;
   if (selectedDate && selectedSlot) progressStep = 3;
-  if (patientName && patientEmail) progressStep = 4;
+  if (patientName.trim()) progressStep = 4;
   const progressPercent = (progressStep / 4) * 100;
 
   const handleBookingSubmit = (e) => {
@@ -164,8 +164,8 @@ export default function SlotPicker() {
       setBookingError('Please select a preferred time slot.');
       return;
     }
-    if (!patientName.trim() || !patientEmail.trim()) {
-      setBookingError('Please enter your full name and email address.');
+    if (!patientName.trim()) {
+      setBookingError('Please enter your full name.');
       return;
     }
     bookMutation.mutate();
@@ -436,11 +436,11 @@ export default function SlotPicker() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
-                    Phone Number
+                    Phone Number (Optional)
                   </label>
                   <input 
                     type="tel"
-                    placeholder="+91 98172 34567"
+                    placeholder="+91 98172 34567 (optional)"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
                     className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"
@@ -449,12 +449,11 @@ export default function SlotPicker() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 font-display">
-                    Email Address *
+                    Email Address (Optional)
                   </label>
                   <input 
                     type="email"
-                    required
-                    placeholder="sunil.kumar@example.com"
+                    placeholder="sunil.kumar@example.com (optional)"
                     value={patientEmail}
                     onChange={(e) => setPatientEmail(e.target.value)}
                     className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-ink font-bold focus:border-coral focus:outline-none"

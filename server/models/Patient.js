@@ -9,8 +9,8 @@ const patientSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
-      unique: true,
+      required: false,
+      sparse: true,
       trim: true,
       lowercase: true,
     },
