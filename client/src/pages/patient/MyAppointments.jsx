@@ -80,7 +80,7 @@ export default function MyAppointments() {
               My Appointments &amp; Treatment History
             </h1>
             <p className="text-gray-600 max-w-xl mx-auto text-base">
-              Enter your email or phone number to look up your scheduled therapy appointments, download slips, or make changes.
+              Enter your phone number, email, or patient name to look up your scheduled therapy appointments, download slips, or make changes.
             </p>
           </div>
 
@@ -89,7 +89,7 @@ export default function MyAppointments() {
             <div className="flex flex-col sm:flex-row gap-2 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
               <input 
                 type="text"
-                placeholder="Enter email or mobile number..."
+                placeholder="Enter phone, email, or patient name..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="flex-1 bg-transparent px-4 py-3 text-ink font-bold focus:outline-none placeholder:text-gray-400 placeholder:font-normal text-sm"
@@ -102,7 +102,7 @@ export default function MyAppointments() {
               </button>
             </div>
             <p className="text-center text-xs text-gray-400 mt-2">
-              🔒 No password needed. Instant lookup using the contact info from your booking.
+              🔒 No password needed. Instant lookup using phone, email, or patient name.
             </p>
           </form>
 

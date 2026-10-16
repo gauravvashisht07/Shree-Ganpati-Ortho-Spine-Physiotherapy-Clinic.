@@ -253,14 +253,10 @@ function PatientsTab() {
       setFormError('Patient Name is required');
       return;
     }
-    if (!formData.patientPhone.trim() && !formData.patientEmail.trim()) {
-      setFormError('Please enter at least a phone number or email');
-      return;
-    }
 
     const payload = {
       patientName: formData.patientName.trim(),
-      patientEmail: formData.patientEmail.trim() || `${formData.patientPhone.trim()}@clinic.local`,
+      patientEmail: formData.patientEmail.trim(),
       patientPhone: formData.patientPhone.trim(),
       patientAddress: formData.patientAddress.trim(),
       patientAge: formData.patientAge ? Number(formData.patientAge) : undefined,
@@ -387,11 +383,11 @@ function PatientsTab() {
                 {/* Patient Phone */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                    Phone Number
+                    Phone Number (Optional)
                   </label>
                   <input
                     type="tel"
-                    placeholder="e.g. +91 98160 12345"
+                    placeholder="e.g. +91 98160 12345 (optional)"
                     value={formData.patientPhone}
                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
@@ -401,7 +397,7 @@ function PatientsTab() {
                 {/* Patient Email */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                    Email Address
+                    Email Address (Optional)
                   </label>
                   <input
                     type="email"
@@ -572,7 +568,7 @@ function PatientsTab() {
                       </div>
                     </td>
                     <td className="p-6 text-sm text-gray-600">
-                      <div>{patient.email || '—'}</div>
+                      <div>{(!patient.email || patient.email.endsWith('@clinic.local')) ? '—' : patient.email}</div>
                       {patient.phone && <div className="text-xs text-gray-400 font-mono mt-0.5">{patient.phone}</div>}
                       {patient.address && (
                         <div className="text-xs text-teal font-medium mt-1 flex items-center gap-1">
@@ -622,7 +618,7 @@ function PatientsTab() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500">{patient.email || 'No email'}</p>
+                      <p className="text-xs text-gray-500">{(!patient.email || patient.email.endsWith('@clinic.local')) ? 'No email' : patient.email}</p>
                     </div>
                   </div>
                   <span className="text-xs font-bold bg-teal/10 text-teal px-2.5 py-1 rounded-full">
@@ -733,14 +729,10 @@ function AppointmentsTab() {
       setFormError('Patient Name is required');
       return;
     }
-    if (!formData.patientPhone.trim() && !formData.patientEmail.trim()) {
-      setFormError('Please enter at least a phone number or email');
-      return;
-    }
 
     const payload = {
       patientName: formData.patientName.trim(),
-      patientEmail: formData.patientEmail.trim() || `${formData.patientPhone.trim()}@clinic.local`,
+      patientEmail: formData.patientEmail.trim(),
       patientPhone: formData.patientPhone.trim(),
       patientAddress: formData.patientAddress.trim(),
       patientAge: formData.patientAge ? Number(formData.patientAge) : undefined,
@@ -887,11 +879,11 @@ function AppointmentsTab() {
                 {/* Patient Phone */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                    Phone Number
+                    Phone Number (Optional)
                   </label>
                   <input
                     type="tel"
-                    placeholder="e.g. +91 98055 87654"
+                    placeholder="e.g. +91 98055 87654 (optional)"
                     value={formData.patientPhone}
                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
@@ -901,7 +893,7 @@ function AppointmentsTab() {
                 {/* Patient Email */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                    Email Address
+                    Email Address (Optional)
                   </label>
                   <input
                     type="email"
@@ -1048,7 +1040,8 @@ function AppointmentsTab() {
                 {appointments.map(appt => {
                   const patientName = appt.patientId?.name || appt.patientName || 'Anonymous';
                   const patientPhone = appt.patientId?.phone || appt.patientPhone || '';
-                  const patientEmail = appt.patientId?.email || appt.patientEmail || '';
+                  const rawEmail = appt.patientId?.email || appt.patientEmail || '';
+                  const patientEmail = rawEmail.endsWith('@clinic.local') ? '' : rawEmail;
                   const patientAddress = appt.patientAddress || appt.patientId?.address || '';
                   const patientAge = appt.patientAge || appt.patientId?.age || '';
                   const patientGender = appt.patientGender || appt.patientId?.gender || '';

@@ -87,8 +87,10 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
 
   const apptId = appointment._id || 'SG-2026-TEMP';
   const patientName = appointment.patientId?.name || appointment.patientName || 'Patient';
-  const patientPhone = appointment.patientId?.phone || appointment.patientPhone || '—';
-  const patientEmail = appointment.patientId?.email || appointment.patientEmail || '—';
+  const rawPhone = appointment.patientId?.phone || appointment.patientPhone || '';
+  const patientPhone = rawPhone || '—';
+  const rawEmail = appointment.patientId?.email || appointment.patientEmail || '';
+  const patientEmail = (!rawEmail || rawEmail.endsWith('@clinic.local')) ? '' : rawEmail;
   const patientAddress = appointment.patientAddress || appointment.patientId?.address || '';
   const patientAge = appointment.patientAge || appointment.patientId?.age || '';
   const patientGender = appointment.patientGender || appointment.patientId?.gender || '';
@@ -176,6 +178,7 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
               </strong>
               <div className="flex flex-col text-xs text-gray-500 font-mono mt-0.5">
                 {patientPhone !== '—' && <span>{patientPhone}</span>}
+                {patientEmail && <span className="font-body text-gray-500 text-[11px] truncate">{patientEmail}</span>}
                 {patientAddress && (
                   <span className="font-body text-gray-600 font-medium truncate mt-0.5">
                     📍 {patientAddress}
