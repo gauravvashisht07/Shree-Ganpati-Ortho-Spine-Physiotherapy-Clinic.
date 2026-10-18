@@ -1,8 +1,10 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axiosInstance from '../../../api/axiosInstance';
 
 export default function PatientDetailModal({ patientId, onClose }) {
+  const queryClient = useQueryClient();
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['patient-history', patientId],
     queryFn: async () => {
@@ -10,6 +12,36 @@ export default function PatientDetailModal({ patientId, onClose }) {
       return res.data;
     },
     enabled: Boolean(patientId)
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }) => {
+      const res = await axiosInstance.patch(`/appointments/${id}/status`, { status });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient-history', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-trends'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-rush-hours'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-demographics'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-services'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-retention'] });
+    }
+  });
+
+  const updatePaymentStatusMutation = useMutation({
+    mutationFn: async ({ id, paymentStatus }) => {
+      const res = await axiosInstance.put(`/appointments/${id}`, { paymentStatus });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient-history', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-services'] });
+    }
   });
 
   if (!patientId) return null;
@@ -138,9 +170,16 @@ export default function PatientDetailModal({ patientId, onClose }) {
 
               {/* Chronological Visit Timeline */}
               <div>
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  Appointment History ({data.appointments.length})
-                </h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Appointment History ({data.appointments.length})
+                  </h4>
+                  {data.summary.completedVisits === 0 && data.summary.totalAppointments > 0 && (
+                    <span className="text-[11px] text-coral font-bold bg-coral/10 px-2.5 py-1 rounded-lg">
+                      💡 Click "✓ Mark as Completed" below to count completed therapies
+                    </span>
+                  )}
+                </div>
 
                 {data.appointments.length === 0 ? (
                   <p className="text-sm text-gray-400 italic">No appointments recorded for this patient.</p>
@@ -149,36 +188,80 @@ export default function PatientDetailModal({ patientId, onClose }) {
                     {data.appointments.map(app => (
                       <div
                         key={app._id}
-                        className="p-4 rounded-2xl border border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-gray-200 transition-colors shadow-2xs"
+                        className="p-4 rounded-2xl border border-gray-100 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-gray-200 transition-colors shadow-2xs"
                       >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-ink text-sm">
                               {app.date} at {app.timeSlot}
                             </span>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${getStatusBadge(app.status)}`}>
                               {app.status}
                             </span>
+                            {app.paymentStatus && (
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                app.paymentStatus === 'paid' ? 'bg-teal/10 text-teal' : 'bg-gray-100 text-gray-500'
+                              }`}>
+                                {app.paymentStatus}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-teal font-medium">
                             {app.serviceId?.name || 'Physiotherapy Consultation'} • Dr. {app.doctorId?.name || 'Specialist'}
                           </p>
                           {app.notes && (
-                            <p className="text-xs text-gray-500 italic mt-1 bg-gray-50 p-2 rounded-lg">
+                            <p className="text-xs text-gray-500 italic bg-gray-50 p-2 rounded-lg">
                               Note: {app.notes}
                             </p>
                           )}
                         </div>
 
-                        <div className="text-right shrink-0">
-                          {app.serviceId?.price && (
-                            <span className="text-xs font-mono font-bold text-ink block">
-                              ₹{app.serviceId.price}
-                            </span>
+                        {/* Interactive Status & Payment Management */}
+                        <div className="flex flex-wrap items-center gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-gray-50">
+                          {/* Quick Mark Completed Button */}
+                          {app.status !== 'completed' && (
+                            <button
+                              onClick={() => updateStatusMutation.mutate({ id: app._id, status: 'completed' })}
+                              disabled={updateStatusMutation.isPending}
+                              className="text-xs font-bold text-white bg-teal hover:bg-[#186f68] px-3 py-1.5 rounded-xl shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Mark this session as attended and completed"
+                            >
+                              <span>✓</span>
+                              <span>Mark Completed</span>
+                            </button>
                           )}
-                          <span className="text-[10px] text-gray-400 uppercase font-medium">
-                            {app.paymentStatus || 'unpaid'}
-                          </span>
+
+                          {/* Full Status Selector */}
+                          <div className="flex flex-col text-left">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Status</label>
+                            <select
+                              value={app.status}
+                              onChange={(e) => updateStatusMutation.mutate({ id: app._id, status: e.target.value })}
+                              className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1 bg-gray-50 text-ink focus:outline-none focus:border-teal cursor-pointer"
+                            >
+                              <option value="completed">Completed</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="pending">Pending</option>
+                              <option value="no-show">No-Show</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </div>
+
+                          {/* Payment Status Selector */}
+                          <div className="flex flex-col text-left">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                              Payment {app.serviceId?.price ? `(₹${app.serviceId.price})` : ''}
+                            </label>
+                            <select
+                              value={app.paymentStatus || 'pending'}
+                              onChange={(e) => updatePaymentStatusMutation.mutate({ id: app._id, paymentStatus: e.target.value })}
+                              className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1 bg-gray-50 text-ink focus:outline-none focus:border-teal cursor-pointer uppercase"
+                            >
+                              <option value="paid">Paid</option>
+                              <option value="pending">Pending</option>
+                              <option value="refunded">Refunded</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
                     ))}
