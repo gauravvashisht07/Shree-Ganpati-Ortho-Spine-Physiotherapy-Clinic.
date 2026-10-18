@@ -334,29 +334,30 @@ function PatientsTab() {
 
       {/* Manual Patient Entry Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100 my-8">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+          <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-7 border border-gray-100 my-auto max-h-[94dvh] sm:max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100 shrink-0">
               <div>
-                <h3 className="text-2xl font-display font-bold text-ink">Register Patient &amp; Book Session</h3>
+                <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">Register Patient &amp; Book Session</h3>
                 <p className="text-xs text-gray-500">Record a patient entry and assign an appointment date &amp; time slot.</p>
               </div>
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-ink font-bold text-lg p-2"
+                className="text-gray-400 hover:text-ink font-bold text-xl p-2 rounded-xl hover:bg-gray-100 transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 mb-4 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200">
+              <div className="p-3 my-3 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200 shrink-0">
                 {formError}
               </div>
             )}
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto py-3 pr-1 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Patient Name */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -552,8 +553,9 @@ function PatientsTab() {
                   </select>
                 </div>
               </div>
+            </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 shrink-0 mt-auto">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -1567,39 +1569,40 @@ function AppointmentsTab() {
 
       {/* MODAL 1: MANUAL PATIENT & MULTI-SLOT ENTRY (ADD) */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100 my-8">
-            <div className="flex justify-between items-center mb-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+          <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-7 border border-gray-100 my-auto max-h-[94dvh] sm:max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100 shrink-0">
               <div>
-                <h3 className="text-2xl font-display font-bold text-ink">Schedule Patient Appointment</h3>
+                <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">Schedule Patient Appointment</h3>
                 <p className="text-xs text-gray-500">Assign walk-in patient or offline booking with multi-appointment capacity.</p>
               </div>
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-ink font-bold text-lg p-2"
+                className="text-gray-400 hover:text-ink font-bold text-xl p-2 rounded-xl hover:bg-gray-100 transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            {/* Unlimited Capacity Admin Notice */}
-            <div className="mb-4 p-3 bg-teal/10 border border-teal/20 rounded-xl text-xs text-teal flex items-center justify-between">
-              <div>
-                <span className="font-black">⚡ Multi-Slot Booking Active:</span> Admins can schedule multiple patients in the same time slot (e.g. 5 patients at 10:00 AM).
-              </div>
-              <span className="font-bold bg-white px-2 py-0.5 rounded-md text-ink shadow-xs">
-                {addSlotOccupancy.length} booked currently
-              </span>
-            </div>
+            <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto py-3 pr-1 space-y-4">
+                {/* Unlimited Capacity Admin Notice */}
+                <div className="p-3 bg-teal/10 border border-teal/20 rounded-xl text-xs text-teal flex items-center justify-between">
+                  <div>
+                    <span className="font-black">⚡ Multi-Slot Booking Active:</span> Admins can schedule multiple patients in the same time slot (e.g. 5 patients at 10:00 AM).
+                  </div>
+                  <span className="font-bold bg-white px-2 py-0.5 rounded-md text-ink shadow-xs">
+                    {addSlotOccupancy.length} booked currently
+                  </span>
+                </div>
 
-            {formError && (
-              <div className="p-3 mb-4 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200">
-                {formError}
-              </div>
-            )}
+                {formError && (
+                  <div className="p-3 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200">
+                    {formError}
+                  </div>
+                )}
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Patient Name */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -1825,8 +1828,9 @@ function AppointmentsTab() {
                   className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-xs"
                 />
               </div>
+            </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 shrink-0 mt-auto">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -1856,41 +1860,42 @@ function AppointmentsTab() {
 
       {/* MODAL 2: EDIT / RESCHEDULE APPOINTMENT */}
       {showEditModal && editingAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100 my-8">
-            <div className="flex justify-between items-center mb-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+          <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-7 border border-gray-100 my-auto max-h-[94dvh] sm:max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100 shrink-0">
               <div>
-                <h3 className="text-2xl font-display font-bold text-ink">Edit &amp; Reschedule Appointment</h3>
+                <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">Edit &amp; Reschedule Appointment</h3>
                 <p className="text-xs text-gray-500">
                   Update appointment date, time slot, duration, status, or patient clinical notes.
                 </p>
               </div>
               <button 
                 onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-ink font-bold text-lg p-2"
+                className="text-gray-400 hover:text-ink font-bold text-xl p-2 rounded-xl hover:bg-gray-100 transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            {/* Occupancy Indicator for target slot */}
-            <div className="mb-4 p-3 bg-teal/10 border border-teal/20 rounded-xl text-xs text-teal flex items-center justify-between">
-              <div>
-                Target Slot: <strong>{editFormData.date}</strong> at <strong>{editFormData.timeSlot}</strong>
-              </div>
-              <span className="font-bold bg-white px-2 py-0.5 rounded-md text-ink shadow-xs">
-                {editSlotOccupancy.length} other patient(s) in this slot
-              </span>
-            </div>
+            <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto py-3 pr-1 space-y-4">
+                {/* Occupancy Indicator for target slot */}
+                <div className="p-3 bg-teal/10 border border-teal/20 rounded-xl text-xs text-teal flex items-center justify-between">
+                  <div>
+                    Target Slot: <strong>{editFormData.date}</strong> at <strong>{editFormData.timeSlot}</strong>
+                  </div>
+                  <span className="font-bold bg-white px-2 py-0.5 rounded-md text-ink shadow-xs">
+                    {editSlotOccupancy.length} other patient(s) in this slot
+                  </span>
+                </div>
 
-            {editFormError && (
-              <div className="p-3 mb-4 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200">
-                {editFormError}
-              </div>
-            )}
+                {editFormError && (
+                  <div className="p-3 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200">
+                    {editFormError}
+                  </div>
+                )}
 
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Patient Name */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -2099,8 +2104,9 @@ function AppointmentsTab() {
                   className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-xs"
                 />
               </div>
+            </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 shrink-0 mt-auto">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
