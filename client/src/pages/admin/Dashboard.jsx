@@ -3082,14 +3082,34 @@ function BlogsTab() {
 
               {/* Video URL */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Video Guide Link (YouTube / Vimeo / MP4)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Video Guide Link (Instagram / YouTube / Vimeo / MP4)
+                  </label>
+                  {formData.videoUrl && (
+                    <span className="text-[11px] font-bold text-teal">
+                      {formData.videoUrl.includes('instagram.com/reel') || formData.videoUrl.includes('instagram.com/p')
+                        ? '📸 Instagram Reel / Post'
+                        : formData.videoUrl.includes('instagram.com')
+                        ? '📸 Instagram Profile / Handle'
+                        : formData.videoUrl.includes('youtube.com/shorts')
+                        ? '▶ YouTube Shorts'
+                        : formData.videoUrl.includes('youtube.com') || formData.videoUrl.includes('youtu.be')
+                        ? '▶ YouTube Video'
+                        : '📹 Video Link'}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="url"
-                  placeholder="e.g. https://www.youtube.com/watch?v=..."
+                  placeholder="e.g. https://www.instagram.com/reel/... or https://youtu.be/..."
                   value={formData.videoUrl}
                   onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
                   className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
                 />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Supports YouTube videos &amp; Shorts, Instagram Reels &amp; Posts, or clinic profile links.
+                </p>
               </div>
             </div>
 
@@ -3195,8 +3215,12 @@ function BlogsTab() {
                       {blog.category}
                     </span>
                     {blog.videoUrl && (
-                      <span className="text-[10px] font-black bg-coral/10 text-coral px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                        ▶ Video Included
+                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                        blog.videoUrl.includes('instagram.com')
+                          ? 'bg-pink-100 text-pink-700'
+                          : 'bg-coral/10 text-coral'
+                      }`}>
+                        {blog.videoUrl.includes('instagram.com') ? '📸 Instagram' : '▶ Video Included'}
                       </span>
                     )}
                     {blog.isFeatured && (
