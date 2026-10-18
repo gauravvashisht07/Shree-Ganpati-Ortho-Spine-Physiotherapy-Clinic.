@@ -64,10 +64,26 @@ const generateSlots = async (doctorId, date) => {
     status: { $ne: 'cancelled' }
   });
 
-  const bookedTimeSlots = bookedAppointments.map(app => app.timeSlot);
+  const slotCapacity = doctor.slotCapacity || 1;
 
-  // Filter out booked slots
-  const availableSlots = possibleSlots.filter(slot => !bookedTimeSlots.includes(slot));
+  // Count active bookings per normalized time slot
+  const slotCountMap = {};
+  bookedAppointments.forEach(app => {
+    let slotKey = (app.timeSlot || '').trim().toUpperCase();
+    if (slotKey.includes('AM') || slotKey.includes('PM')) {
+      const isPM = slotKey.includes('PM');
+      const raw = slotKey.replace(/[^\d:]/g, '');
+      const [rawH, rawM = '00'] = raw.split(':');
+      let hours = parseInt(rawH, 10);
+      if (isPM && hours < 12) hours += 12;
+      if (!isPM && hours === 12) hours = 0;
+      slotKey = `${hours.toString().padStart(2, '0')}:${parseInt(rawM, 10).toString().padStart(2, '0')}`;
+    }
+    slotCountMap[slotKey] = (slotCountMap[slotKey] || 0) + 1;
+  });
+
+  // Filter out slots that have reached or exceeded doctor's slotCapacity
+  const availableSlots = possibleSlots.filter(slot => (slotCountMap[slot] || 0) < slotCapacity);
 
   return availableSlots;
 };
