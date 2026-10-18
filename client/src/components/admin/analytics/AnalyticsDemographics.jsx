@@ -15,13 +15,24 @@ export default function AnalyticsDemographics({ demographics, isLoading, onSelec
 
   if (!demographics) return null;
 
-  const ageData = (demographics.ageGroupAnalytics || []).map(a => ({
-    label: a.category.replace(' (', '\n('),
-    rawCategory: a.category,
-    value: a.count,
-    percentage: a.percentage,
-    patients: a.patients
-  }));
+  const ageData = (demographics.ageGroupAnalytics || []).map(a => {
+    let mainLabel = a.category;
+    let subLabel = '';
+    if (a.category.includes(' (')) {
+      const parts = a.category.split(' (');
+      mainLabel = parts[0];
+      subLabel = '(' + parts[1];
+    }
+    return {
+      label: mainLabel,
+      subLabel: subLabel,
+      fullCategory: a.category,
+      rawCategory: a.category,
+      value: a.count,
+      percentage: a.percentage,
+      patients: a.patients
+    };
+  });
 
   const activeGroupObj = demographics.ageGroupAnalytics?.find(
     a => a.category === selectedAgeGroup
@@ -56,14 +67,16 @@ export default function AnalyticsDemographics({ demographics, isLoading, onSelec
           <div className="py-2">
             <SimpleBarChart
               data={ageData}
-              xKey="rawCategory"
+              xKey="label"
+              subKey="subLabel"
               yKey="value"
-              height={230}
+              height={240}
               barColor="#1F8A82"
               onBarClick={(item) => {
                 setSelectedAgeGroup(item.rawCategory === selectedAgeGroup ? null : item.rawCategory);
               }}
               activeKey={selectedAgeGroup}
+              tooltipLabel="Patients"
             />
           </div>
 

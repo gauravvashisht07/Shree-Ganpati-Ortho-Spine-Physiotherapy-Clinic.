@@ -15,13 +15,13 @@ export default function AnalyticsRushHours({ rushData, isLoading }) {
 
   const dayChartData = (rushData.dayOfWeekDistribution || []).map(d => ({
     label: d.day.slice(0, 3),
-    fullDay: d.day,
+    fullCategory: d.day,
     value: d.completed
   }));
 
   const slotChartData = (rushData.timeSlotDistribution || []).map(s => ({
-    label: s.slot.replace(':00', '').replace(' ', ''),
-    fullSlot: s.slot,
+    label: s.slot,
+    fullCategory: `Time Slot: ${s.slot}`,
     value: s.completed
   }));
 
@@ -111,6 +111,7 @@ export default function AnalyticsRushHours({ rushData, isLoading }) {
               yKey="value"
               height={220}
               barColor="#1F8A82"
+              tooltipLabel="Completed Visits"
             />
           </div>
 
@@ -135,8 +136,10 @@ export default function AnalyticsRushHours({ rushData, isLoading }) {
               data={slotChartData}
               xKey="label"
               yKey="value"
-              height={220}
+              height={260}
               barColor="#FF6F4D"
+              rotateLabels={true}
+              tooltipLabel="Completed Visits"
             />
           </div>
 
