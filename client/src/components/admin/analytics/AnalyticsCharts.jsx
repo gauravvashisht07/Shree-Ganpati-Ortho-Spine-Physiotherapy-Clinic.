@@ -163,11 +163,14 @@ export function SimpleAreaChart({
 export function SimpleBarChart({
   data = [],
   xKey = 'label',
+  subKey = null,
   yKey = 'value',
-  height = 220,
+  height = 240,
   barColor = '#1F8A82',
   onBarClick = null,
-  activeKey = null
+  activeKey = null,
+  rotateLabels = false,
+  tooltipLabel = 'Count'
 }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
@@ -181,27 +184,29 @@ export function SimpleBarChart({
 
   const values = data.map(d => Number(d[yKey]) || 0);
   const maxVal = Math.max(...values, 1);
-  const width = 500;
-  const paddingX = 30;
-  const paddingBottom = 40;
-  const paddingTop = 20;
-  const chartHeight = height - paddingBottom - paddingTop;
+  const width = 640;
+  const paddingX = 35;
+  const shouldRotate = rotateLabels || data.length > 9;
+  const paddingBottom = shouldRotate ? 65 : (subKey ? 50 : 38);
+  const paddingTop = 24;
+  const effectiveHeight = shouldRotate ? Math.max(height, 250) : height;
+  const chartHeight = effectiveHeight - paddingBottom - paddingTop;
   const availableWidth = width - paddingX * 2;
-  const barWidth = Math.min(36, (availableWidth / data.length) * 0.65);
   const gap = availableWidth / data.length;
+  const barWidth = Math.min(42, Math.max(16, gap * 0.62));
 
   return (
     <div className="relative w-full overflow-hidden">
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${width} ${effectiveHeight}`}
         className="w-full h-auto overflow-visible select-none"
       >
         {/* Horizontal Baseline */}
         <line
           x1={paddingX}
-          y1={height - paddingBottom}
+          y1={effectiveHeight - paddingBottom}
           x2={width - paddingX}
-          y2={height - paddingBottom}
+          y2={effectiveHeight - paddingBottom}
           stroke="#E5E7EB"
           strokeWidth="1.5"
         />
@@ -210,9 +215,19 @@ export function SimpleBarChart({
           const val = Number(d[yKey]) || 0;
           const barH = (val / maxVal) * chartHeight;
           const x = paddingX + i * gap + (gap - barWidth) / 2;
-          const y = height - paddingBottom - barH;
-          const isSelected = activeKey && d[xKey] === activeKey;
+          const y = effectiveHeight - paddingBottom - barH;
+          const isSelected = activeKey && (d[xKey] === activeKey || d.rawCategory === activeKey || d.fullCategory === activeKey);
           const isHovered = hoveredIndex === i;
+
+          // Parse label and subLabel
+          let mainLabel = String(d[xKey] || '');
+          let subLabel = subKey && d[subKey] ? String(d[subKey]) : '';
+
+          if (!subLabel && mainLabel.includes(' (')) {
+            const parts = mainLabel.split(' (');
+            mainLabel = parts[0];
+            subLabel = '(' + parts[1];
+          }
 
           return (
             <g
@@ -222,13 +237,25 @@ export function SimpleBarChart({
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
+              {/* Background hover guide */}
+              {isHovered && (
+                <rect
+                  x={x - 4}
+                  y={paddingTop}
+                  width={barWidth + 8}
+                  height={chartHeight}
+                  fill="rgba(31, 138, 130, 0.05)"
+                  rx={8}
+                />
+              )}
+
               {/* Bar */}
               <rect
                 x={x}
                 y={y}
                 width={barWidth}
                 height={Math.max(barH, 3)}
-                rx={5}
+                rx={6}
                 fill={isSelected ? '#FF6F4D' : (isHovered ? '#186f68' : barColor)}
                 className="transition-all duration-200"
               />
@@ -237,29 +264,91 @@ export function SimpleBarChart({
               {val > 0 && (
                 <text
                   x={x + barWidth / 2}
-                  y={y - 5}
+                  y={y - 6}
                   textAnchor="middle"
-                  className="text-[10px] font-bold fill-gray-700 font-mono"
+                  className="text-[11px] font-bold fill-gray-800 font-mono"
                 >
                   {val}
                 </text>
               )}
 
               {/* Category label */}
-              <text
-                x={x + barWidth / 2}
-                y={height - paddingBottom + 16}
-                textAnchor="middle"
-                className={`text-[10px] font-medium transition-colors ${
-                  isSelected ? 'fill-coral font-bold' : 'fill-gray-500'
-                }`}
-              >
-                {d[xKey]}
-              </text>
+              {shouldRotate ? (
+                <text
+                  x={x + barWidth / 2}
+                  y={effectiveHeight - paddingBottom + 12}
+                  textAnchor="end"
+                  transform={`rotate(-40, ${x + barWidth / 2}, ${effectiveHeight - paddingBottom + 12})`}
+                  className={`text-[10px] font-mono font-medium transition-colors ${
+                    isSelected ? 'fill-coral font-bold' : (isHovered ? 'fill-ink font-bold' : 'fill-gray-600')
+                  }`}
+                >
+                  {d[xKey]}
+                </text>
+              ) : subLabel ? (
+                <text
+                  x={x + barWidth / 2}
+                  y={effectiveHeight - paddingBottom + 16}
+                  textAnchor="middle"
+                  className={`text-[10.5px] transition-colors ${
+                    isSelected ? 'fill-coral font-bold' : (isHovered ? 'fill-ink font-bold' : 'fill-gray-700 font-semibold')
+                  }`}
+                >
+                  <tspan x={x + barWidth / 2} dy="0">
+                    {mainLabel}
+                  </tspan>
+                  <tspan
+                    x={x + barWidth / 2}
+                    dy="13"
+                    className="fill-gray-400 text-[9px] font-mono font-normal"
+                  >
+                    {subLabel}
+                  </tspan>
+                </text>
+              ) : (
+                <text
+                  x={x + barWidth / 2}
+                  y={effectiveHeight - paddingBottom + 18}
+                  textAnchor="middle"
+                  className={`text-[10.5px] font-semibold transition-colors ${
+                    isSelected ? 'fill-coral font-bold' : (isHovered ? 'fill-ink font-bold' : 'fill-gray-600')
+                  }`}
+                >
+                  {mainLabel}
+                </text>
+              )}
             </g>
           );
         })}
       </svg>
+
+      {/* Floating Tooltip */}
+      {hoveredIndex !== null && data[hoveredIndex] && (
+        <div
+          className="absolute z-20 pointer-events-none bg-gray-900 text-white text-xs px-3 py-2 rounded-xl shadow-xl -translate-x-1/2 -translate-y-full transition-all"
+          style={{
+            left: `${((paddingX + hoveredIndex * gap + gap / 2) / width) * 100}%`,
+            top: `${Math.max(15, ((effectiveHeight - paddingBottom - (Number(data[hoveredIndex][yKey]) || 0) / maxVal * chartHeight) / effectiveHeight) * 100 - 10)}%`
+          }}
+        >
+          <div className="font-bold text-gray-200">
+            {data[hoveredIndex].fullCategory || data[hoveredIndex][xKey]}
+          </div>
+          <div className="text-teal font-extrabold text-sm mt-0.5">
+            {data[hoveredIndex][yKey]} {tooltipLabel}
+            {data[hoveredIndex].percentage !== undefined && (
+              <span className="text-gray-400 font-normal text-xs ml-1">
+                ({data[hoveredIndex].percentage}%)
+              </span>
+            )}
+          </div>
+          {onBarClick && (
+            <div className="text-[10px] text-coral font-medium mt-1">
+              Click to view patient roster ↗
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
