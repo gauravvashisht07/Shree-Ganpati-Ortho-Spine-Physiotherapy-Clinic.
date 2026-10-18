@@ -749,6 +749,7 @@ function AppointmentsTab() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
+  const [deletingAppointment, setDeletingAppointment] = useState(null);
 
   const [formData, setFormData] = useState({
     patientName: '',
@@ -949,10 +950,7 @@ function AppointmentsTab() {
   };
 
   const handleDelete = (appt) => {
-    const pName = appt.patientId?.name || appt.patientName || 'this patient';
-    if (window.confirm(`Are you sure you want to delete the appointment for ${pName} on ${appt.date} at ${appt.timeSlot}? This action cannot be undone.`)) {
-      deleteAppointmentMutation.mutate(appt._id);
-    }
+    setDeletingAppointment(appt);
   };
 
   const handleFormSubmit = (e) => {
@@ -2133,6 +2131,50 @@ function AppointmentsTab() {
           </div>
         </div>
       )}
+
+      {/* MODAL 3: DELETE APPOINTMENT CONFIRMATION */}
+      {deletingAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-gray-100 space-y-4 animate-scaleUp">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-xl font-bold">
+              🗑️
+            </div>
+            <div>
+              <h3 className="text-xl font-display font-bold text-ink">Delete Appointment</h3>
+              <p className="text-sm text-gray-600 mt-2">
+                Are you sure you want to delete the appointment for{' '}
+                <strong className="text-ink">
+                  {deletingAppointment.patientId?.name || deletingAppointment.patientName || 'this patient'}
+                </strong>{' '}
+                on <strong>{deletingAppointment.date}</strong> at <strong>{deletingAppointment.timeSlot}</strong>?
+              </p>
+              <p className="text-xs text-red-500 font-semibold mt-2">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setDeletingAppointment(null)}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteAppointmentMutation.mutate(deletingAppointment._id);
+                  setDeletingAppointment(null);
+                }}
+                disabled={deleteAppointmentMutation.isPending}
+                className="bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm disabled:opacity-50"
+              >
+                {deleteAppointmentMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2143,6 +2185,7 @@ function DoctorsTab() {
   const [editingDoctorId, setEditingDoctorId] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [deletingDoctorId, setDeletingDoctorId] = useState(null);
 
   const handleStartAdd = () => {
     setEditingDoctorId(null);
@@ -2320,12 +2363,33 @@ function DoctorsTab() {
                   >
                     Edit
                   </button>
-                  <button 
-                    onClick={() => { if(window.confirm(`Delete Dr. ${doc.name}?`)) deleteDoctor.mutate(doc._id) }} 
-                    className="text-red-500 hover:text-red-700 font-bold transition-colors px-2 py-1 rounded hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
+                  {deletingDoctorId === doc._id ? (
+                    <span className="inline-flex items-center gap-1.5 animate-fadeIn">
+                      <button
+                        onClick={() => {
+                          deleteDoctor.mutate(doc._id);
+                          setDeletingDoctorId(null);
+                        }}
+                        disabled={deleteDoctor.isPending}
+                        className="text-xs font-bold bg-red-600 text-white px-2.5 py-1 rounded-lg hover:bg-red-700 transition-colors shadow-xs"
+                      >
+                        {deleteDoctor.isPending ? '...' : 'Confirm?'}
+                      </button>
+                      <button
+                        onClick={() => setDeletingDoctorId(null)}
+                        className="text-xs font-bold text-gray-500 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button 
+                      onClick={() => setDeletingDoctorId(doc._id)} 
+                      className="text-red-500 hover:text-red-700 font-bold transition-colors px-2 py-1 rounded hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -2354,12 +2418,33 @@ function DoctorsTab() {
               >
                 Edit
               </button>
-              <button 
-                onClick={() => { if(window.confirm(`Delete Dr. ${doc.name}?`)) deleteDoctor.mutate(doc._id) }} 
-                className="min-h-[44px] px-4 text-red-500 hover:bg-red-50 rounded-lg font-bold text-sm"
-              >
-                Delete
-              </button>
+              {deletingDoctorId === doc._id ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      deleteDoctor.mutate(doc._id);
+                      setDeletingDoctorId(null);
+                    }}
+                    disabled={deleteDoctor.isPending}
+                    className="min-h-[44px] px-3 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-xs"
+                  >
+                    {deleteDoctor.isPending ? '...' : 'Confirm?'}
+                  </button>
+                  <button
+                    onClick={() => setDeletingDoctorId(null)}
+                    className="min-h-[44px] px-3 text-gray-500 hover:bg-gray-100 rounded-lg font-bold text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setDeletingDoctorId(doc._id)} 
+                  className="min-h-[44px] px-4 text-red-500 hover:bg-red-50 rounded-lg font-bold text-sm"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -2374,6 +2459,7 @@ function ServicesTab() {
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [deletingServiceId, setDeletingServiceId] = useState(null);
 
   const handleStartAdd = () => {
     setEditingServiceId(null);
@@ -2512,12 +2598,33 @@ function ServicesTab() {
                   >
                     Edit
                   </button>
-                  <button 
-                    onClick={() => { if(window.confirm(`Delete service "${svc.name}"?`)) deleteService.mutate(svc._id) }} 
-                    className="text-red-500 hover:text-red-700 font-bold transition-colors px-2 py-1 rounded hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
+                  {deletingServiceId === svc._id ? (
+                    <span className="inline-flex items-center gap-1.5 animate-fadeIn">
+                      <button
+                        onClick={() => {
+                          deleteService.mutate(svc._id);
+                          setDeletingServiceId(null);
+                        }}
+                        disabled={deleteService.isPending}
+                        className="text-xs font-bold bg-red-600 text-white px-2.5 py-1 rounded-lg hover:bg-red-700 transition-colors shadow-xs"
+                      >
+                        {deleteService.isPending ? '...' : 'Confirm?'}
+                      </button>
+                      <button
+                        onClick={() => setDeletingServiceId(null)}
+                        className="text-xs font-bold text-gray-500 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button 
+                      onClick={() => setDeletingServiceId(svc._id)} 
+                      className="text-red-500 hover:text-red-700 font-bold transition-colors px-2 py-1 rounded hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -2541,12 +2648,33 @@ function ServicesTab() {
               >
                 Edit
               </button>
-              <button 
-                onClick={() => { if(window.confirm(`Delete service "${svc.name}"?`)) deleteService.mutate(svc._id) }} 
-                className="min-h-[44px] px-4 text-red-500 hover:bg-red-50 rounded-lg font-bold text-sm"
-              >
-                Delete
-              </button>
+              {deletingServiceId === svc._id ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      deleteService.mutate(svc._id);
+                      setDeletingServiceId(null);
+                    }}
+                    disabled={deleteService.isPending}
+                    className="min-h-[44px] px-3 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-xs"
+                  >
+                    {deleteService.isPending ? '...' : 'Confirm?'}
+                  </button>
+                  <button
+                    onClick={() => setDeletingServiceId(null)}
+                    className="min-h-[44px] px-3 text-gray-500 hover:bg-gray-100 rounded-lg font-bold text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setDeletingServiceId(svc._id)} 
+                  className="min-h-[44px] px-4 text-red-500 hover:bg-red-50 rounded-lg font-bold text-sm"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -2558,6 +2686,7 @@ function ServicesTab() {
 function ReviewsTab() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState('all');
+  const [deletingReviewId, setDeletingReviewId] = useState(null);
 
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ['admin-reviews'],
@@ -2697,17 +2826,34 @@ function ReviewsTab() {
                   {rev.isApproved ? 'Unpublish' : '✓ Approve & Publish'}
                 </button>
 
-                <button
-                  onClick={() => {
-                    if (window.confirm(`Delete review from ${rev.patientName}?`)) {
-                      deleteReview.mutate(rev._id);
-                    }
-                  }}
-                  disabled={deleteReview.isPending}
-                  className="px-4 py-2 rounded-xl font-bold text-xs text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  Delete
-                </button>
+                {deletingReviewId === rev._id ? (
+                  <div className="flex items-center gap-1.5 animate-fadeIn">
+                    <button
+                      onClick={() => {
+                        deleteReview.mutate(rev._id);
+                        setDeletingReviewId(null);
+                      }}
+                      disabled={deleteReview.isPending}
+                      className="px-3 py-2 rounded-xl font-bold text-xs bg-red-600 text-white hover:bg-red-700 transition-colors shadow-xs"
+                    >
+                      {deleteReview.isPending ? '...' : 'Confirm?'}
+                    </button>
+                    <button
+                      onClick={() => setDeletingReviewId(null)}
+                      className="px-2.5 py-2 rounded-xl font-bold text-xs text-gray-500 hover:bg-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setDeletingReviewId(rev._id)}
+                    disabled={deleteReview.isPending}
+                    className="px-4 py-2 rounded-xl font-bold text-xs text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -2722,6 +2868,7 @@ function BlogsTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingPostId, setEditingPostId] = useState(null);
   const [formError, setFormError] = useState('');
+  const [deletingBlogId, setDeletingBlogId] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -3082,17 +3229,34 @@ function BlogsTab() {
                 >
                   Edit
                 </button>
-                <button
-                  onClick={() => {
-                    if (window.confirm(`Delete post "${blog.title}"?`)) {
-                      deleteMutation.mutate(blog._id);
-                    }
-                  }}
-                  disabled={deleteMutation.isPending}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  Delete
-                </button>
+                {deletingBlogId === blog._id ? (
+                  <div className="flex items-center gap-1.5 animate-fadeIn">
+                    <button
+                      onClick={() => {
+                        deleteMutation.mutate(blog._id);
+                        setDeletingBlogId(null);
+                      }}
+                      disabled={deleteMutation.isPending}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700 shadow-xs transition-colors"
+                    >
+                      {deleteMutation.isPending ? 'Deleting...' : 'Confirm Delete?'}
+                    </button>
+                    <button
+                      onClick={() => setDeletingBlogId(null)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setDeletingBlogId(blog._id)}
+                    disabled={deleteMutation.isPending}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}
