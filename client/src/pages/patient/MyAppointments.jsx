@@ -10,6 +10,8 @@ export default function MyAppointments() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedSlipAppt, setSelectedSlipAppt] = useState(null);
+  const [cancellingApptId, setCancellingApptId] = useState(null);
+  const [cancelError, setCancelError] = useState('');
 
   const savedIdentifier = localStorage.getItem('patientEmail') || localStorage.getItem('patientPhone') || '';
   const [searchInput, setSearchInput] = useState(savedIdentifier);
@@ -36,7 +38,7 @@ export default function MyAppointments() {
       queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
     },
     onError: (err) => {
-      alert(err.response?.data?.message || err.message || 'Failed to cancel appointment');
+      setCancelError(err.response?.data?.message || err.message || 'Failed to cancel appointment');
     }
   });
 
@@ -148,6 +150,12 @@ export default function MyAppointments() {
               </div>
             ) : (
               <div className="space-y-12">
+                {cancelError && (
+                  <div className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-200 text-sm font-bold flex justify-between items-center">
+                    <span>{cancelError}</span>
+                    <button onClick={() => setCancelError('')} className="text-xs text-red-400 hover:text-red-700">✕ Dismiss</button>
+                  </div>
+                )}
                 
                 {/* Upcoming Appointments */}
                 {upcoming.length > 0 && (
@@ -202,17 +210,39 @@ export default function MyAppointments() {
                               </button>
 
                               <div className="flex items-center gap-3 ml-auto">
-                                <button
-                                  onClick={() => {
-                                    if (window.confirm('Are you sure you want to cancel this appointment?')) {
-                                      cancelMutation.mutate(appt._id);
-                                    }
-                                  }}
-                                  disabled={cancelMutation.isPending}
-                                  className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors underline"
-                                >
-                                  Cancel
-                                </button>
+                                {cancellingApptId === appt._id ? (
+                                  <div className="flex items-center gap-1.5 animate-fadeIn">
+                                    <button
+                                      onClick={() => {
+                                        setCancelError('');
+                                        cancelMutation.mutate(appt._id, {
+                                          onSettled: () => setCancellingApptId(null)
+                                        });
+                                      }}
+                                      disabled={cancelMutation.isPending}
+                                      className="text-xs font-bold bg-red-600 text-white hover:bg-red-700 px-2.5 py-1 rounded-lg transition-colors shadow-xs"
+                                    >
+                                      {cancelMutation.isPending ? 'Cancelling...' : 'Confirm Cancel?'}
+                                    </button>
+                                    <button
+                                      onClick={() => setCancellingApptId(null)}
+                                      className="text-xs font-bold text-gray-500 hover:bg-gray-100 px-2 py-1 rounded-lg transition-colors"
+                                    >
+                                      Keep
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setCancelError('');
+                                      setCancellingApptId(appt._id);
+                                    }}
+                                    disabled={cancelMutation.isPending}
+                                    className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors underline"
+                                  >
+                                    Cancel
+                                  </button>
+                                )}
 
                                 <button
                                   onClick={() => navigate('/book')}
