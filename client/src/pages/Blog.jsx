@@ -118,8 +118,13 @@ export default function Blog() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   {featuredPost.videoUrl && (
-                    <span className="absolute top-4 left-4 bg-coral text-white text-xs font-black uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 backdrop-blur-xs">
-                      <span>▶</span> Video Demonstration
+                    <span className={`absolute top-4 left-4 text-white text-xs font-black uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 backdrop-blur-xs ${
+                      featuredPost.videoUrl.includes('instagram.com')
+                        ? 'bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045]'
+                        : 'bg-coral'
+                    }`}>
+                      <span>{featuredPost.videoUrl.includes('instagram.com') ? '📸' : '▶'}</span>
+                      <span>{featuredPost.videoUrl.includes('instagram.com') ? 'Instagram Video' : 'Video Demonstration'}</span>
                     </span>
                   )}
                   <span className="absolute bottom-4 left-4 bg-ink/80 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-xs">
@@ -179,8 +184,13 @@ export default function Blog() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       {post.videoUrl && (
-                        <span className="absolute top-3 right-3 bg-black/70 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1">
-                          <span>▶</span> Video
+                        <span className={`absolute top-3 right-3 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1 ${
+                          post.videoUrl.includes('instagram.com')
+                            ? 'bg-gradient-to-r from-[#833ab4] to-[#fd1d1d]'
+                            : 'bg-black/70'
+                        }`}>
+                          <span>{post.videoUrl.includes('instagram.com') ? '📸' : '▶'}</span>
+                          <span>{post.videoUrl.includes('instagram.com') ? 'Instagram' : 'Video'}</span>
                         </span>
                       )}
                       <span className="absolute bottom-3 left-3 bg-white/95 text-teal text-[11px] font-bold px-3 py-1 rounded-full shadow-xs">
