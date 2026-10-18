@@ -58,14 +58,14 @@ const blogSchema = new mongoose.Schema(
 );
 
 // Auto-generate slug before save
-blogSchema.pre('save', function (next) {
+blogSchema.pre('save', function () {
   if (this.title && !this.slug) {
-    this.slug = this.title
+    const baseSlug = this.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
+    this.slug = baseSlug || `article-${Date.now()}`;
   }
-  next();
 });
 
 module.exports = mongoose.model('Blog', blogSchema);
