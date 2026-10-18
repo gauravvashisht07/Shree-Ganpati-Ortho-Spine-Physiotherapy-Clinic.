@@ -111,13 +111,13 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
       
       {/* Container */}
-      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col my-8">
+      <div className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col my-auto max-h-[94dvh] sm:max-h-[90vh]">
         
         {/* Modal Action Header (Hidden during Print) */}
-        <div className="print:hidden bg-gray-50 border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+        <div className="print:hidden bg-gray-50 border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-lg">🖨️</span>
             <span className="font-display font-bold text-ink text-sm">Official Consultation Pass &amp; Slip</span>
@@ -139,7 +139,7 @@ export default function AppointmentSlipModal({ appointment, onClose }) {
         </div>
 
         {/* Printable Slip Body */}
-        <div id="printable-appointment-slip" className="p-8 space-y-6 bg-white text-ink font-body">
+        <div id="printable-appointment-slip" className="p-6 sm:p-8 space-y-6 bg-white text-ink font-body overflow-y-auto flex-1">
           
           {/* Clinic Header */}
           <div className="flex items-start justify-between border-b-2 border-dashed border-teal/30 pb-6">

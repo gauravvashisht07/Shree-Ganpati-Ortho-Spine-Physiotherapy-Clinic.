@@ -174,34 +174,35 @@ export default function ReviewsSection() {
 
         {/* Modal: Write a Review */}
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
-            <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100 my-8">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+            <div className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-7 border border-gray-100 my-auto max-h-[94dvh] sm:max-h-[90vh] flex flex-col">
               
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center pb-3 border-b border-gray-100 shrink-0">
                 <div>
-                  <h3 className="text-2xl font-display font-bold text-ink">Share Your Feedback</h3>
+                  <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">Share Your Feedback</h3>
                   <p className="text-xs text-gray-500">Your review helps other patients in Himachal find the right care.</p>
                 </div>
                 <button 
                   onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-ink font-bold text-lg p-2"
+                  className="text-gray-400 hover:text-ink font-bold text-xl p-2 rounded-xl hover:bg-gray-100 transition-colors"
                 >
                   ✕
                 </button>
               </div>
 
               {successMsg ? (
-                <div className="p-6 bg-teal/10 border border-teal text-teal rounded-2xl text-center font-bold space-y-2">
+                <div className="p-6 bg-teal/10 border border-teal text-teal rounded-2xl text-center font-bold space-y-2 my-auto">
                   <span className="text-3xl">🎉</span>
                   <p className="text-sm">{successMsg}</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {errorMsg && (
-                    <div className="p-3 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200">
-                      {errorMsg}
-                    </div>
-                  )}
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+                  <div className="flex-1 overflow-y-auto py-3 pr-1 space-y-4">
+                    {errorMsg && (
+                      <div className="p-3 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200">
+                        {errorMsg}
+                      </div>
+                    )}
 
                   {/* Rating Selector */}
                   <div>
@@ -280,9 +281,10 @@ export default function ReviewsSection() {
                       onChange={(e) => setComment(e.target.value)}
                       className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-ink focus:border-teal focus:outline-none text-sm"
                     ></textarea>
+                    </div>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 shrink-0 mt-auto">
                     <button
                       type="button"
                       onClick={() => setShowModal(false)}

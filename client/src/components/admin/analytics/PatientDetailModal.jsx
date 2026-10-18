@@ -58,8 +58,8 @@ export default function PatientDetailModal({ patientId, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
-      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100 my-8 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+      <div className="bg-white w-full max-w-3xl rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-7 border border-gray-100 my-auto max-h-[94dvh] sm:max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-start pb-4 border-b border-gray-100">
           <div>
@@ -273,7 +273,7 @@ export default function PatientDetailModal({ patientId, onClose }) {
         </div>
 
         {/* Modal Footer */}
-        <div className="pt-4 border-t border-gray-100 flex justify-end">
+        <div className="pt-4 border-t border-gray-100 flex justify-end shrink-0 mt-auto">
           <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-ink hover:bg-gray-200 transition-colors"
