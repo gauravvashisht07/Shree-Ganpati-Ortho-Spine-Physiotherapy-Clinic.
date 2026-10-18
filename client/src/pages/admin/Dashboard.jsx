@@ -204,7 +204,9 @@ function PatientsTab() {
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
-    timeSlot: '09:30 AM'
+    timeSlot: '09:30 AM',
+    status: 'completed',
+    paymentStatus: 'paid'
   });
   const [formError, setFormError] = useState('');
   const queryClient = useQueryClient();
@@ -219,6 +221,13 @@ function PatientsTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-trends'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-rush-hours'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-demographics'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-services'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-retention'] });
       setShowAddModal(false);
       setFormData({
         patientName: '',
@@ -230,7 +239,9 @@ function PatientsTab() {
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
-        timeSlot: '09:30 AM'
+        timeSlot: '09:30 AM',
+        status: 'completed',
+        paymentStatus: 'paid'
       });
       setFormError('');
     },
@@ -240,6 +251,7 @@ function PatientsTab() {
   });
 
   const handleStartAdd = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
     setFormData({
       patientName: '',
       patientEmail: '',
@@ -249,8 +261,10 @@ function PatientsTab() {
       patientGender: 'male',
       doctorId: doctors[0]?._id || '',
       serviceId: services[0]?._id || '',
-      date: new Date().toISOString().split('T')[0],
-      timeSlot: '09:30 AM'
+      date: todayStr,
+      timeSlot: '09:30 AM',
+      status: 'completed',
+      paymentStatus: 'paid'
     });
     setFormError('');
     setShowAddModal(true);
@@ -275,7 +289,8 @@ function PatientsTab() {
       serviceId: formData.serviceId || services[0]?._id,
       date: formData.date,
       timeSlot: formData.timeSlot,
-      status: 'confirmed'
+      status: formData.status || 'completed',
+      paymentStatus: formData.paymentStatus || 'paid'
     };
 
     createPatientApptMutation.mutate(payload);
@@ -485,7 +500,7 @@ function PatientsTab() {
                 </div>
 
                 {/* Time Slot Selection */}
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Time Slot *
                   </label>
@@ -500,6 +515,40 @@ function PatientsTab() {
                         {t}
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                {/* Visit Status Selection */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Session Status *
+                  </label>
+                  <select
+                    required
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
+                  >
+                    <option value="completed">Completed (Attended &amp; Treated)</option>
+                    <option value="confirmed">Confirmed (Upcoming)</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+
+                {/* Payment Status */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Payment Status *
+                  </label>
+                  <select
+                    required
+                    value={formData.paymentStatus}
+                    onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
+                  >
+                    <option value="paid">Paid (Payment Received)</option>
+                    <option value="pending">Pending / Unpaid</option>
+                    <option value="refunded">Refunded</option>
                   </select>
                 </div>
               </div>
@@ -758,6 +807,13 @@ function AppointmentsTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-trends'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-rush-hours'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-demographics'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-services'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-retention'] });
       setShowAddModal(false);
       setFormData({
         patientName: '',
@@ -771,6 +827,7 @@ function AppointmentsTab() {
         date: selectedScheduleDate || new Date().toISOString().split('T')[0],
         timeSlot: '09:30 AM',
         status: 'confirmed',
+        paymentStatus: 'paid',
         duration: 30,
         notes: ''
       });
@@ -788,6 +845,13 @@ function AppointmentsTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-trends'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-rush-hours'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-demographics'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-services'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-retention'] });
       setShowEditModal(false);
       setEditingAppointment(null);
       setEditFormError('');
@@ -804,6 +868,13 @@ function AppointmentsTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-trends'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-rush-hours'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-demographics'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-services'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-retention'] });
     }
   });
 
@@ -814,6 +885,13 @@ function AppointmentsTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-trends'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-rush-hours'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-demographics'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-services'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-retention'] });
     }
   });
 
@@ -823,6 +901,9 @@ function AppointmentsTab() {
   ];
 
   const handleStartAdd = (prefillSlot = null) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const initialDate = selectedScheduleDate || todayStr;
+    const isPast = initialDate < todayStr;
     setFormData({
       patientName: '',
       patientEmail: '',
@@ -832,9 +913,10 @@ function AppointmentsTab() {
       patientGender: 'male',
       doctorId: (selectedDoctorFilter !== 'All' ? selectedDoctorFilter : (doctors[0]?._id || '')),
       serviceId: (selectedServiceFilter !== 'All' ? selectedServiceFilter : (services[0]?._id || '')),
-      date: selectedScheduleDate || new Date().toISOString().split('T')[0],
+      date: initialDate,
       timeSlot: prefillSlot || '09:30 AM',
-      status: 'confirmed',
+      status: isPast ? 'completed' : 'confirmed',
+      paymentStatus: 'paid',
       duration: 30,
       notes: ''
     });
@@ -891,6 +973,7 @@ function AppointmentsTab() {
       date: formData.date,
       timeSlot: formData.timeSlot,
       status: formData.status || 'confirmed',
+      paymentStatus: formData.paymentStatus || 'paid',
       duration: Number(formData.duration) || 30,
       notes: formData.notes?.trim() || ''
     };
@@ -1689,14 +1772,30 @@ function AppointmentsTab() {
                     className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
                   >
                     <option value="confirmed">Confirmed</option>
-                    <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
                     <option value="no-show">No-Show</option>
                   </select>
                 </div>
 
-                {/* Duration */}
+                {/* Payment Status */}
                 <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Payment Status
+                  </label>
+                  <select
+                    value={formData.paymentStatus}
+                    onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl font-bold text-ink focus:border-teal focus:outline-none text-sm"
+                  >
+                    <option value="paid">Paid</option>
+                    <option value="pending">Pending</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                </div>
+
+                {/* Duration */}
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Session Duration (Mins)
                   </label>
