@@ -42,6 +42,21 @@ const startServer = async () => {
       await mongoose.connect(MONGO_URI);
       console.log('Connected to MongoDB');
       await seedAdmin();
+
+      // Check and safely migrate legacy unique index on appointments if present
+      try {
+        const Appointment = require('./models/Appointment');
+        const indexes = await Appointment.collection.indexes();
+        const legacyIndex = indexes.find(idx => idx.name === 'doctorId_1_date_1_timeSlot_1' && idx.unique);
+        if (legacyIndex) {
+          console.log('Migrating legacy unique index doctorId_1_date_1_timeSlot_1 to allow multiple appointments per slot...');
+          await Appointment.collection.dropIndex('doctorId_1_date_1_timeSlot_1');
+          await Appointment.syncIndexes();
+          console.log('Successfully dropped legacy unique index. Multiple appointments per slot are now enabled.');
+        }
+      } catch (idxErr) {
+        // Non-critical, continue startup
+      }
     } else {
       console.warn('Warning: MONGO_URI is not defined. Server running without DB connection.');
     }

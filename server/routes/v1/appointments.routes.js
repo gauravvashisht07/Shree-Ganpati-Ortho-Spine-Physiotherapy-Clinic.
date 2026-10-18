@@ -11,8 +11,24 @@ const bookingLimiter = rateLimit({
   message: { message: 'Too many booking requests from this IP, please try again after a minute' }
 });
 
-// Public or basic auth booking logic
-router.post('/', bookingLimiter, appointmentController.createAppointment);
+const jwt = require('jsonwebtoken');
+
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+      req.user = decoded;
+    } catch (e) {
+      // Continue as guest if token is invalid or expired
+    }
+  }
+  next();
+};
+
+// Booking endpoint (supports public self-booking with rate limiting AND admin multi-booking with Bearer token)
+router.post('/', bookingLimiter, optionalAuth, appointmentController.createAppointment);
 
 // Patient public endpoints (no password required)
 router.get('/lookup', appointmentController.lookupAppointments);
@@ -24,7 +40,10 @@ router.put('/:id/cancel', authMiddleware, requireRole('patient', 'admin'), appoi
 
 // Doctor & Admin endpoints
 router.get('/', authMiddleware, requireRole('admin'), appointmentController.getAll);
+router.get('/slot-occupancy', authMiddleware, requireRole('doctor', 'admin'), appointmentController.getSlotOccupancy);
 router.get('/doctor/:doctorId', authMiddleware, requireRole('doctor', 'admin'), appointmentController.getDoctorSchedule);
 router.patch('/:id/status', authMiddleware, requireRole('doctor', 'admin'), appointmentController.updateStatus);
+router.put('/:id', authMiddleware, requireRole('doctor', 'admin'), appointmentController.updateAppointment);
+router.delete('/:id', authMiddleware, requireRole('admin'), appointmentController.deleteAppointment);
 
 module.exports = router;

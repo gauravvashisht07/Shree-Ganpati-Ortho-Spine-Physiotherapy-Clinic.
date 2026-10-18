@@ -54,6 +54,15 @@ const appointmentSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    duration: {
+      type: Number,
+      default: 30, // in minutes
+    },
+    notes: {
+      type: String,
+      trim: true,
+      default: '',
     }
   },
   {
@@ -61,14 +70,12 @@ const appointmentSchema = new mongoose.Schema(
   }
 );
 
-// Unique index for doctor, date, and time slot, ignoring cancelled appointments
-appointmentSchema.index(
-  { doctorId: 1, date: 1, timeSlot: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { isActive: true },
-  }
-);
+// High-performance query indexes for schedule and analytics lookups
+// Non-unique index on doctor, date, and time slot allows multiple appointments per slot
+appointmentSchema.index({ doctorId: 1, date: 1, timeSlot: 1 });
+appointmentSchema.index({ date: 1, status: 1 });
+appointmentSchema.index({ patientId: 1, status: 1 });
+appointmentSchema.index({ serviceId: 1 });
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 

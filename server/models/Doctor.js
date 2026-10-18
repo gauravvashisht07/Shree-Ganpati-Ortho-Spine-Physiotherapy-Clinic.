@@ -52,6 +52,11 @@ const doctorSchema = new mongoose.Schema(
       required: true,
       default: 30, // in minutes
     },
+    slotCapacity: {
+      type: Number,
+      default: 1, // maximum simultaneous appointments per slot (for public self-booking)
+      min: 1,
+    },
     isActive: {
       type: Boolean,
       default: true,

@@ -7,6 +7,7 @@ const servicesRoutes = require('./services.routes');
 const appointmentsRoutes = require('./appointments.routes');
 const reviewsRoutes = require('./reviews.routes');
 const blogsRoutes = require('./blogs.routes');
+const analyticsRoutes = require('./analytics.routes');
 
 router.use('/auth', authRoutes);
 router.use('/doctors', doctorsRoutes);
@@ -14,6 +15,7 @@ router.use('/services', servicesRoutes);
 router.use('/appointments', appointmentsRoutes);
 router.use('/reviews', reviewsRoutes);
 router.use('/blogs', blogsRoutes);
+router.use('/analytics', analyticsRoutes);
 
 // Basic health check route
 router.get('/health', (req, res) => {

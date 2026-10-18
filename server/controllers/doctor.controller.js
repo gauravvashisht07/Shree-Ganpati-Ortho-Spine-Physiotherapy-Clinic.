@@ -23,7 +23,7 @@ exports.getById = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { name, email, password, specialization, slotDuration, isActive } = req.body;
+    const { name, email, password, specialization, slotDuration, isActive, slotCapacity } = req.body;
     
     let passwordHash;
     if (password) {
@@ -46,6 +46,7 @@ exports.create = async (req, res) => {
       passwordHash,
       specialization: specs,
       slotDuration: Number(slotDuration) || 30,
+      slotCapacity: Number(slotCapacity) || 1,
       isActive: isActive !== undefined ? isActive : true,
       role: 'doctor'
     });
