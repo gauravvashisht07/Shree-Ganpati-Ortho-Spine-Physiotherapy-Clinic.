@@ -124,7 +124,7 @@ export default function AnalyticsRushHours({ rushData, isLoading }) {
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-2xs flex flex-col justify-between">
           <div className="mb-4">
             <h3 className="text-lg font-display font-bold text-ink">
-              Visits by Time Slot (09:30 AM – 05:00 PM)
+              Visits by Time Slot (10:00 AM – 05:00 PM)
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
               Identifies the peak morning and afternoon consultation hours.
@@ -144,7 +144,7 @@ export default function AnalyticsRushHours({ rushData, isLoading }) {
           </div>
 
           <div className="text-[11px] text-gray-400 text-center pt-2 border-t border-gray-50">
-            Clinic lunch hour (01:00 PM - 02:00 PM) is blocked from regular slots.
+            Clinic lunch timing (01:00 PM - 01:30 PM) is reserved for break.
           </div>
         </div>
       </div>
