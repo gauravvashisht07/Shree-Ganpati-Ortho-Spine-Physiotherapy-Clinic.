@@ -2,6 +2,7 @@ const Appointment = require('../models/Appointment');
 const Patient = require('../models/Patient');
 const Service = require('../models/Service');
 const Doctor = require('../models/Doctor');
+const Visit = require('../models/Visit');
 
 // Helper to calculate date boundaries
 function getISODateOnly(d = new Date()) {
@@ -103,35 +104,76 @@ function buildAppointmentQuery(query) {
   return filter;
 }
 
+// Build common filter for clinical visits based on query parameters
+function buildVisitQuery(query) {
+  const filter = { status: 'completed' };
+  const { startDate, endDate, doctorId, serviceId, gender, ageGroup } = query;
+
+  if (startDate && endDate) {
+    filter.visitDate = { $gte: startDate, $lte: endDate };
+  } else if (startDate) {
+    filter.visitDate = { $gte: startDate };
+  } else if (endDate) {
+    filter.visitDate = { $lte: endDate };
+  }
+
+  if (doctorId && doctorId !== 'All') {
+    filter.doctorId = doctorId;
+  }
+  if (serviceId && serviceId !== 'All') {
+    filter.serviceId = serviceId;
+  }
+  if (gender && gender !== 'All') {
+    filter.patientGender = gender.toLowerCase();
+  }
+
+  if (ageGroup && ageGroup !== 'All') {
+    switch (ageGroup) {
+      case 'Children (0-12)': filter.patientAge = { $gte: 0, $lte: 12 }; break;
+      case 'Teenagers (13-19)': filter.patientAge = { $gte: 13, $lte: 19 }; break;
+      case 'Young Adults (20-35)': filter.patientAge = { $gte: 20, $lte: 35 }; break;
+      case 'Adults (36-50)': filter.patientAge = { $gte: 36, $lte: 50 }; break;
+      case 'Middle-Aged (51-65)': filter.patientAge = { $gte: 51, $lte: 65 }; break;
+      case 'Seniors (66+)': filter.patientAge = { $gte: 66 }; break;
+      case 'Unknown': filter.$or = [{ patientAge: { $exists: false } }, { patientAge: null }]; break;
+    }
+  }
+
+  return filter;
+}
+
 /**
  * 1. OVERVIEW KPIS
+ * Uses the Visit collection as source-of-truth for completed visits and actual visit dates,
+ * and Appointment collection for planned bookings, cancellations, and no-shows.
  */
 exports.getOverview = async (req, res) => {
   try {
     const today = getISODateOnly(new Date());
-    const filter = buildAppointmentQuery(req.query);
+    const apptFilter = buildAppointmentQuery(req.query);
+    const visitFilter = buildVisitQuery(req.query);
+
+    // Filtered clinical visits in period
+    const visitsInPeriod = await Visit.find(visitFilter).lean();
+    const completedVisitsInPeriod = visitsInPeriod.length;
+
+    let estimatedRevenue = 0;
+    const uniquePatientsVisitedInPeriod = new Set();
+
+    visitsInPeriod.forEach(v => {
+      if (v.patientId) uniquePatientsVisitedInPeriod.add(v.patientId.toString());
+      estimatedRevenue += (v.fee || 0);
+    });
 
     // Filtered appointments in period
-    const appointmentsInPeriod = await Appointment.find(filter)
-      .populate('serviceId', 'price')
-      .lean();
-
+    const appointmentsInPeriod = await Appointment.find(apptFilter).lean();
     const totalAppointments = appointmentsInPeriod.length;
 
-    // Distinct completed, cancelled, no-show in period
-    let completedVisitsInPeriod = 0;
     let cancelledInPeriod = 0;
     let noShowInPeriod = 0;
-    let estimatedRevenue = 0;
-    const uniquePatientsInPeriod = new Set();
 
     appointmentsInPeriod.forEach(app => {
-      if (app.patientId) uniquePatientsInPeriod.add(app.patientId.toString());
-      if (app.status === 'completed') {
-        completedVisitsInPeriod += 1;
-        const price = app.serviceId?.price || 0;
-        estimatedRevenue += price;
-      } else if (app.status === 'cancelled') {
+      if (app.status === 'cancelled') {
         cancelledInPeriod += 1;
       } else if (app.status === 'no-show') {
         noShowInPeriod += 1;
@@ -141,41 +183,44 @@ exports.getOverview = async (req, res) => {
     // Total unique registered patients in the clinic database
     const totalPatients = await Patient.countDocuments();
 
+    // Patients with no recorded completed visits yet
+    const patientsWithNoVisits = await Patient.countDocuments({
+      $or: [{ totalVisits: 0 }, { totalVisits: { $exists: false } }]
+    });
+
     // Today's appointments (all statuses)
     const todayAppointments = await Appointment.countDocuments({ date: today });
 
-    // Today's completed visits
-    const todayCompletedVisits = await Appointment.countDocuments({
-      date: today,
+    // Today's completed visits (actual clinical visits on today's date)
+    const todayCompletedVisits = await Visit.countDocuments({
+      visitDate: today,
       status: 'completed'
     });
 
-    // Returning patients: patients with > 1 completed visits across entire clinic history
-    const patientCompletedCounts = await Appointment.aggregate([
-      { $match: { status: 'completed' } },
-      { $group: { _id: '$patientId', completedCount: { $sum: 1 } } },
-      { $match: { completedCount: { $gt: 1 } } }
-    ]);
-    const returningPatientsCount = patientCompletedCounts.length;
-
     // New patients this period:
-    // Defined as unique patients whose very first recorded appointment date falls within the selected period
+    // Defined as unique patients whose very first recorded clinical visit date falls within the selected period
     let newPatientsInPeriodCount = 0;
+    let returningPatientsCount = 0;
     const startDate = req.query.startDate;
-    const endDate = req.query.endDate || getISODateOnly(new Date());
+    const endDate = req.query.endDate || today;
 
     if (startDate) {
-      const patientEarliestDates = await Appointment.aggregate([
-        { $group: { _id: '$patientId', firstDate: { $min: '$date' } } }
-      ]);
-      patientEarliestDates.forEach(p => {
-        if (p.firstDate >= startDate && p.firstDate <= endDate) {
-          newPatientsInPeriodCount += 1;
-        }
+      newPatientsInPeriodCount = await Patient.countDocuments({
+        firstVisitDate: { $gte: startDate, $lte: endDate }
       });
+
+      // Returning patients in this period: visited in this period, but their first visit was earlier than startDate
+      if (uniquePatientsVisitedInPeriod.size > 0) {
+        const visitedPatientIds = Array.from(uniquePatientsVisitedInPeriod);
+        returningPatientsCount = await Patient.countDocuments({
+          _id: { $in: visitedPatientIds },
+          firstVisitDate: { $lt: startDate }
+        });
+      }
     } else {
-      // If no start date filter, default to total unique patients in period
-      newPatientsInPeriodCount = uniquePatientsInPeriod.size;
+      // If all-time:
+      newPatientsInPeriodCount = totalPatients - patientsWithNoVisits;
+      returningPatientsCount = await Patient.countDocuments({ totalVisits: { $gt: 1 } });
     }
 
     const cancellationRate = totalAppointments > 0 
@@ -188,13 +233,15 @@ exports.getOverview = async (req, res) => {
 
     const completionRate = totalAppointments > 0 
       ? Number(((completedVisitsInPeriod / totalAppointments) * 100).toFixed(1)) 
-      : 0;
+      : (completedVisitsInPeriod > 0 ? 100 : 0);
 
     res.json({
       totalPatients,
+      patientsWithNoVisits,
       todayAppointments,
       todayCompletedVisits,
       totalVisitsInPeriod: completedVisitsInPeriod,
+      uniquePatientsInPeriod: uniquePatientsVisitedInPeriod.size,
       totalAppointmentsInPeriod: totalAppointments,
       newPatientsInPeriod: newPatientsInPeriodCount,
       returningPatientsCount,
@@ -215,31 +262,36 @@ exports.getOverview = async (req, res) => {
 
 /**
  * 2. DAILY, WEEKLY, AND MONTHLY VISIT TRENDS
+ * Respects actual visitDate from Visit records for completed visits.
  */
 exports.getVisitTrends = async (req, res) => {
   try {
-    const filter = buildAppointmentQuery(req.query);
+    const apptFilter = buildAppointmentQuery(req.query);
+    const visitFilter = buildVisitQuery(req.query);
 
-    const appointments = await Appointment.find(filter)
-      .sort({ date: 1, timeSlot: 1 })
-      .lean();
+    const [appointments, completedVisits] = await Promise.all([
+      Appointment.find(apptFilter).lean(),
+      Visit.find(visitFilter).lean()
+    ]);
 
     // 1. Daily trends map
     const dailyMap = {};
     // 2. Monthly trends map
     const monthlyMap = {};
     // 3. Status distribution
-    const statusCounts = { completed: 0, confirmed: 0, pending: 0, cancelled: 0, 'no-show': 0 };
+    const statusCounts = { completed: completedVisits.length, confirmed: 0, pending: 0, cancelled: 0, 'no-show': 0 };
 
     appointments.forEach(app => {
       const d = app.date;
       const month = d.substring(0, 7); // YYYY-MM
       const st = app.status || 'pending';
 
-      if (statusCounts[st] !== undefined) {
-        statusCounts[st] += 1;
-      } else {
-        statusCounts[st] = 1;
+      if (st !== 'completed') {
+        if (statusCounts[st] !== undefined) {
+          statusCounts[st] += 1;
+        } else {
+          statusCounts[st] = 1;
+        }
       }
 
       // Daily
@@ -247,7 +299,6 @@ exports.getVisitTrends = async (req, res) => {
         dailyMap[d] = { date: d, completed: 0, total: 0, cancelled: 0, noShow: 0 };
       }
       dailyMap[d].total += 1;
-      if (st === 'completed') dailyMap[d].completed += 1;
       if (st === 'cancelled') dailyMap[d].cancelled += 1;
       if (st === 'no-show') dailyMap[d].noShow += 1;
 
@@ -256,7 +307,28 @@ exports.getVisitTrends = async (req, res) => {
         monthlyMap[month] = { month, completed: 0, total: 0 };
       }
       monthlyMap[month].total += 1;
-      if (st === 'completed') monthlyMap[month].completed += 1;
+    });
+
+    // Populate completed visits based on actual visitDate
+    completedVisits.forEach(v => {
+      const d = v.visitDate;
+      const month = d.substring(0, 7);
+
+      if (!dailyMap[d]) {
+        dailyMap[d] = { date: d, completed: 0, total: 0, cancelled: 0, noShow: 0 };
+      }
+      dailyMap[d].completed += 1;
+      if (dailyMap[d].total < dailyMap[d].completed) {
+        dailyMap[d].total = dailyMap[d].completed;
+      }
+
+      if (!monthlyMap[month]) {
+        monthlyMap[month] = { month, completed: 0, total: 0 };
+      }
+      monthlyMap[month].completed += 1;
+      if (monthlyMap[month].total < monthlyMap[month].completed) {
+        monthlyMap[month].total = monthlyMap[month].completed;
+      }
     });
 
     const dailyTrends = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
@@ -266,7 +338,7 @@ exports.getVisitTrends = async (req, res) => {
     const patientGrowthData = await Patient.aggregate([
       {
         $group: {
-          _id: { $substr: ['$createdAt', 0, 7] }, // YYYY-MM
+          _id: { $substr: [{ $ifNull: ['$registrationDate', { $substr: ['$createdAt', 0, 10] }] }, 0, 7] },
           newRegistrations: { $sum: 1 }
         }
       },
@@ -300,45 +372,43 @@ exports.getVisitTrends = async (req, res) => {
  */
 exports.getDemographics = async (req, res) => {
   try {
-    const filter = buildAppointmentQuery(req.query);
+    const visitFilter = buildVisitQuery(req.query);
 
-    // Fetch appointments with populated patient details
-    const appointments = await Appointment.find(filter)
-      .populate('patientId', 'name age gender phone address createdAt')
+    // Fetch visits with populated patient details
+    const visits = await Visit.find(visitFilter)
+      .populate('patientId', 'name age gender phone address createdAt patientId')
       .populate('serviceId', 'name')
       .lean();
 
-    // Map unique patients from appointments (or all patients if no date filter)
     const patientMap = new Map();
 
-    appointments.forEach(app => {
-      const p = app.patientId;
-      const patientId = p ? p._id.toString() : (app.patientName || 'anon');
-      
-      const effectiveAge = app.patientAge !== undefined && app.patientAge !== null 
-        ? app.patientAge 
+    visits.forEach(v => {
+      const p = v.patientId;
+      const patientId = p ? p._id.toString() : (v.patientAddress || 'anon');
+
+      const effectiveAge = v.patientAge !== undefined && v.patientAge !== null 
+        ? v.patientAge 
         : (p?.age !== undefined ? p.age : null);
-      
-      const effectiveGender = (app.patientGender || p?.gender || 'unknown').toLowerCase();
+
+      const effectiveGender = (v.patientGender || p?.gender || 'unknown').toLowerCase();
 
       if (!patientMap.has(patientId)) {
         patientMap.set(patientId, {
           id: p ? p._id : null,
-          name: p?.name || app.patientName || 'Anonymous',
+          patientId: p?.patientId || '',
+          name: p?.name || 'Anonymous',
           age: effectiveAge,
           gender: effectiveGender,
-          phone: p?.phone || app.patientPhone || '',
-          address: app.patientAddress || p?.address || '',
-          appointmentsCount: 0,
+          phone: p?.phone || '',
+          address: v.patientAddress || p?.address || '',
           completedVisits: 0,
           services: new Set()
         });
       }
 
       const rec = patientMap.get(patientId);
-      rec.appointmentsCount += 1;
-      if (app.status === 'completed') rec.completedVisits += 1;
-      if (app.serviceId?.name) rec.services.add(app.serviceId.name);
+      rec.completedVisits += 1;
+      if (v.serviceId?.name) rec.services.add(v.serviceId.name);
     });
 
     const uniquePatients = Array.from(patientMap.values()).map(p => ({
@@ -362,6 +432,7 @@ exports.getDemographics = async (req, res) => {
       if (!ageGroupPatients[group]) ageGroupPatients[group] = [];
       ageGroupPatients[group].push({
         id: p.id,
+        patientId: p.patientId,
         name: p.name,
         age: p.age,
         gender: p.gender,
@@ -442,14 +513,18 @@ exports.getDemographics = async (req, res) => {
 
 /**
  * 4. BUSIEST DAYS & PEAK TIME SLOTS (HEATMAP & TRAFFIC ANALYSIS)
+ * Uses Visit records for completed clinical visits and Appointment records for scheduled demand.
  */
 exports.getRushHours = async (req, res) => {
   try {
-    const filter = buildAppointmentQuery(req.query);
+    const apptFilter = buildAppointmentQuery(req.query);
+    const visitFilter = buildVisitQuery(req.query);
 
-    const appointments = await Appointment.find(filter).lean();
+    const [appointments, visits] = await Promise.all([
+      Appointment.find(apptFilter).lean(),
+      Visit.find(visitFilter).lean()
+    ]);
 
-    // 1. Day of Week distribution for completed visits and total scheduled demand
     const dayOfWeekCounts = {
       Monday: { day: 'Monday', completed: 0, scheduled: 0 },
       Tuesday: { day: 'Tuesday', completed: 0, scheduled: 0 },
@@ -460,13 +535,11 @@ exports.getRushHours = async (req, res) => {
       Sunday: { day: 'Sunday', completed: 0, scheduled: 0 }
     };
 
-    // 2. Hourly / TimeSlot distribution
     const timeSlotMap = {};
     STANDARD_SLOTS.forEach(slot => {
       timeSlotMap[slot] = { slot, completed: 0, scheduled: 0 };
     });
 
-    // 3. Weekly Heatmap Matrix: Day (rows) x Time Slot (columns)
     const heatmapMatrix = {};
     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].forEach(d => {
       heatmapMatrix[d] = {};
@@ -475,36 +548,41 @@ exports.getRushHours = async (req, res) => {
       });
     });
 
-    let totalCompleted = 0;
+    let totalCompleted = visits.length;
     let maxCellCompleted = 0;
 
-    appointments.forEach(app => {
-      const dateObj = new Date(app.date);
+    // Process completed visits using their actual visitDate
+    visits.forEach(v => {
+      const dateObj = new Date(v.visitDate + 'T00:00:00');
       const dayName = DAYS_OF_WEEK[dateObj.getDay()];
-      const normalizedSlot = normalizeTimeSlotDisplay(app.timeSlot);
-
-      const isCompleted = app.status === 'completed';
-      const isConfirmed = app.status === 'confirmed';
+      const normalizedSlot = normalizeTimeSlotDisplay(v.timeSlot);
 
       if (dayOfWeekCounts[dayName]) {
-        if (isCompleted) dayOfWeekCounts[dayName].completed += 1;
-        if (isConfirmed) dayOfWeekCounts[dayName].scheduled += 1;
+        dayOfWeekCounts[dayName].completed += 1;
       }
 
       if (timeSlotMap[normalizedSlot]) {
-        if (isCompleted) timeSlotMap[normalizedSlot].completed += 1;
-        if (isConfirmed) timeSlotMap[normalizedSlot].scheduled += 1;
+        timeSlotMap[normalizedSlot].completed += 1;
       }
 
       if (heatmapMatrix[dayName] && heatmapMatrix[dayName][normalizedSlot]) {
-        if (isCompleted) {
-          heatmapMatrix[dayName][normalizedSlot].completed += 1;
-          totalCompleted += 1;
-          if (heatmapMatrix[dayName][normalizedSlot].completed > maxCellCompleted) {
-            maxCellCompleted = heatmapMatrix[dayName][normalizedSlot].completed;
-          }
+        heatmapMatrix[dayName][normalizedSlot].completed += 1;
+        if (heatmapMatrix[dayName][normalizedSlot].completed > maxCellCompleted) {
+          maxCellCompleted = heatmapMatrix[dayName][normalizedSlot].completed;
         }
-        if (isConfirmed) {
+      }
+    });
+
+    // Process scheduled appointments for demand insight
+    appointments.forEach(app => {
+      const dateObj = new Date(app.date + 'T00:00:00');
+      const dayName = DAYS_OF_WEEK[dateObj.getDay()];
+      const normalizedSlot = normalizeTimeSlotDisplay(app.timeSlot);
+
+      if (app.status === 'confirmed' || app.status === 'pending') {
+        if (dayOfWeekCounts[dayName]) dayOfWeekCounts[dayName].scheduled += 1;
+        if (timeSlotMap[normalizedSlot]) timeSlotMap[normalizedSlot].scheduled += 1;
+        if (heatmapMatrix[dayName] && heatmapMatrix[dayName][normalizedSlot]) {
           heatmapMatrix[dayName][normalizedSlot].scheduled += 1;
         }
       }
@@ -533,7 +611,7 @@ exports.getRushHours = async (req, res) => {
     const busiestSlot = sortedSlots[0]?.completed > 0 ? sortedSlots[0].slot : 'No completed visits yet';
 
     // Unique active working days in period
-    const activeDates = new Set(appointments.filter(a => a.status === 'completed').map(a => a.date));
+    const activeDates = new Set(visits.map(v => v.visitDate));
     const averageVisitsPerDay = activeDates.size > 0 
       ? Number((totalCompleted / activeDates.size).toFixed(1)) 
       : 0;
@@ -561,10 +639,15 @@ exports.getRushHours = async (req, res) => {
  */
 exports.getServicesAnalytics = async (req, res) => {
   try {
-    const filter = buildAppointmentQuery(req.query);
+    const visitFilter = buildVisitQuery(req.query);
+    const apptFilter = buildAppointmentQuery(req.query);
 
-    // Fetch all services present in database
-    const allServices = await Service.find().lean();
+    const [allServices, visits, appointments] = await Promise.all([
+      Service.find().lean(),
+      Visit.find(visitFilter).lean(),
+      Appointment.find(apptFilter).lean()
+    ]);
+
     const serviceStats = {};
 
     allServices.forEach(s => {
@@ -581,22 +664,24 @@ exports.getServicesAnalytics = async (req, res) => {
       };
     });
 
-    const appointments = await Appointment.find(filter).lean();
-    let totalCompletedVisitsAll = 0;
-
     appointments.forEach(app => {
       const sId = app.serviceId ? app.serviceId.toString() : null;
       if (sId && serviceStats[sId]) {
         serviceStats[sId].totalAppointments += 1;
-        if (app.patientId) serviceStats[sId].uniquePatients.add(app.patientId.toString());
-
-        if (app.status === 'completed') {
-          serviceStats[sId].completedVisits += 1;
-          serviceStats[sId].revenue += (serviceStats[sId].price || 0);
-          totalCompletedVisitsAll += 1;
-        } else if (app.status === 'cancelled') {
+        if (app.status === 'cancelled') {
           serviceStats[sId].cancelledCount += 1;
         }
+      }
+    });
+
+    let totalCompletedVisitsAll = visits.length;
+
+    visits.forEach(v => {
+      const sId = v.serviceId ? v.serviceId.toString() : null;
+      if (sId && serviceStats[sId]) {
+        serviceStats[sId].completedVisits += 1;
+        serviceStats[sId].revenue += (v.fee || serviceStats[sId].price || 0);
+        if (v.patientId) serviceStats[sId].uniquePatients.add(v.patientId.toString());
       }
     });
 
@@ -610,7 +695,7 @@ exports.getServicesAnalytics = async (req, res) => {
         name: s.name,
         price: s.price,
         duration: s.duration,
-        totalAppointments: s.totalAppointments,
+        totalAppointments: Math.max(s.totalAppointments, s.completedVisits),
         completedVisits: s.completedVisits,
         uniquePatientsCount: s.uniquePatients.size,
         percentageOfCompletedVisits: percentage,
@@ -639,30 +724,26 @@ exports.getServicesAnalytics = async (req, res) => {
  */
 exports.getPatientRetention = async (req, res) => {
   try {
-    const filter = buildAppointmentQuery(req.query);
+    const visitFilter = buildVisitQuery(req.query);
+    const visits = await Visit.find(visitFilter).lean();
 
-    const appointments = await Appointment.find(filter).lean();
     const patientVisitsMap = {};
 
-    appointments.forEach(app => {
-      if (!app.patientId) return;
-      const pId = app.patientId.toString();
+    visits.forEach(v => {
+      if (!v.patientId) return;
+      const pId = v.patientId.toString();
       if (!patientVisitsMap[pId]) {
-        patientVisitsMap[pId] = { total: 0, completed: 0 };
+        patientVisitsMap[pId] = 0;
       }
-      patientVisitsMap[pId].total += 1;
-      if (app.status === 'completed') {
-        patientVisitsMap[pId].completed += 1;
-      }
+      patientVisitsMap[pId] += 1;
     });
 
     const totalPatientsWithVisits = Object.keys(patientVisitsMap).length;
     let returningPatientsCount = 0;
-    let totalCompletedVisits = 0;
+    let totalCompletedVisits = visits.length;
 
-    Object.values(patientVisitsMap).forEach(v => {
-      totalCompletedVisits += v.completed;
-      if (v.completed > 1) {
+    Object.values(patientVisitsMap).forEach(count => {
+      if (count > 1) {
         returningPatientsCount += 1;
       }
     });
@@ -691,7 +772,7 @@ exports.getPatientRetention = async (req, res) => {
 };
 
 /**
- * 7. INDIVIDUAL PATIENT VISIT HISTORY (FOR DRILL-DOWN MODAL)
+ * 7. INDIVIDUAL PATIENT VISIT HISTORY (FOR CLINICAL PROFILE & DRILL-DOWN MODAL)
  */
 exports.getPatientHistory = async (req, res) => {
   try {
@@ -702,50 +783,63 @@ exports.getPatientHistory = async (req, res) => {
       return res.status(404).json({ message: 'Patient record not found' });
     }
 
-    const appointments = await Appointment.find({ patientId })
-      .populate('doctorId', 'name specialization')
-      .populate('serviceId', 'name price duration')
-      .sort({ date: -1, timeSlot: -1 })
-      .lean();
+    const [appointments, visits] = await Promise.all([
+      Appointment.find({ patientId })
+        .populate('doctorId', 'name specialization')
+        .populate('serviceId', 'name price duration')
+        .sort({ date: -1, timeSlot: -1 })
+        .lean(),
+      Visit.find({ patientId })
+        .populate('doctorId', 'name specialization')
+        .populate('serviceId', 'name price duration')
+        .sort({ visitDate: -1, createdAt: -1 })
+        .lean()
+    ]);
 
     let completedCount = 0;
     let cancelledCount = 0;
     let noShowCount = 0;
     const serviceCounts = {};
 
-    appointments.forEach(app => {
-      if (app.status === 'completed') completedCount += 1;
-      if (app.status === 'cancelled') cancelledCount += 1;
-      if (app.status === 'no-show') noShowCount += 1;
+    visits.forEach(v => {
+      if (v.status === 'completed') completedCount += 1;
+      else if (v.status === 'cancelled') cancelledCount += 1;
 
-      if (app.serviceId?.name) {
-        serviceCounts[app.serviceId.name] = (serviceCounts[app.serviceId.name] || 0) + 1;
+      if (v.serviceId?.name) {
+        serviceCounts[v.serviceId.name] = (serviceCounts[v.serviceId.name] || 0) + 1;
       }
     });
 
-    const firstVisit = appointments[appointments.length - 1]?.date || 'None';
-    const lastVisit = appointments[0]?.date || 'None';
+    appointments.forEach(app => {
+      if (app.status === 'no-show') noShowCount += 1;
+    });
 
     res.json({
       patient: {
         _id: patient._id,
+        patientId: patient.patientId || '',
         name: patient.name,
         email: patient.email && !patient.email.endsWith('@clinic.local') ? patient.email : '',
         phone: patient.phone || '',
+        phoneNormalized: patient.phoneNormalized || '',
         address: patient.address || '',
         age: patient.age,
         gender: patient.gender,
-        registeredAt: patient.createdAt
+        totalVisits: patient.totalVisits !== undefined ? patient.totalVisits : completedCount,
+        firstVisitDate: patient.firstVisitDate || (visits[visits.length - 1]?.visitDate) || null,
+        lastVisitDate: patient.lastVisitDate || (visits[0]?.visitDate) || null,
+        registeredAt: patient.registrationDate || patient.createdAt
       },
       summary: {
         totalAppointments: appointments.length,
         completedVisits: completedCount,
         cancelledVisits: cancelledCount,
         noShowVisits: noShowCount,
-        firstVisitDate: firstVisit,
-        lastVisitDate: lastVisit,
+        firstVisitDate: patient.firstVisitDate || (visits[visits.length - 1]?.visitDate) || 'None',
+        lastVisitDate: patient.lastVisitDate || (visits[0]?.visitDate) || 'None',
         servicesReceived: serviceCounts
       },
+      visits,
       appointments
     });
   } catch (error) {
@@ -759,19 +853,19 @@ exports.getPatientHistory = async (req, res) => {
  */
 exports.exportCSV = async (req, res) => {
   try {
-    const filter = buildAppointmentQuery(req.query);
+    const visitFilter = buildVisitQuery(req.query);
 
-    const appointments = await Appointment.find(filter)
-      .populate('patientId', 'name age gender phone address')
+    const visits = await Visit.find(visitFilter)
+      .populate('patientId', 'patientId name age gender phone address')
       .populate('doctorId', 'name')
       .populate('serviceId', 'name price')
-      .sort({ date: -1, timeSlot: 1 })
+      .sort({ visitDate: -1, createdAt: -1 })
       .lean();
 
     // Generate CSV Header
     const headers = [
-      'Appointment ID',
-      'Date',
+      'Patient ID',
+      'Visit Date',
       'Time Slot',
       'Patient Name',
       'Age',
@@ -782,7 +876,9 @@ exports.exportCSV = async (req, res) => {
       'Service',
       'Fee (INR)',
       'Status',
-      'Payment Status'
+      'Payment Status',
+      'Notes',
+      'Record Created At'
     ];
 
     const escapeCSV = (val) => {
@@ -791,26 +887,28 @@ exports.exportCSV = async (req, res) => {
       return `"${str}"`;
     };
 
-    const rows = appointments.map(app => [
-      escapeCSV(app._id),
-      escapeCSV(app.date),
-      escapeCSV(app.timeSlot),
-      escapeCSV(app.patientId?.name || app.patientName || 'Anonymous'),
-      escapeCSV(app.patientAge || app.patientId?.age || ''),
-      escapeCSV(app.patientGender || app.patientId?.gender || ''),
-      escapeCSV(app.patientAddress || app.patientId?.address || ''),
-      escapeCSV(app.patientPhone || app.patientId?.phone || ''),
-      escapeCSV(app.doctorId?.name ? `Dr. ${app.doctorId.name}` : ''),
-      escapeCSV(app.serviceId?.name || 'General Consultation'),
-      escapeCSV(app.serviceId?.price || 0),
-      escapeCSV(app.status || 'pending'),
-      escapeCSV(app.paymentStatus || 'unpaid')
+    const rows = visits.map(v => [
+      escapeCSV(v.patientId?.patientId || ''),
+      escapeCSV(v.visitDate),
+      escapeCSV(v.timeSlot),
+      escapeCSV(v.patientId?.name || 'Anonymous'),
+      escapeCSV(v.patientAge || v.patientId?.age || ''),
+      escapeCSV(v.patientGender || v.patientId?.gender || ''),
+      escapeCSV(v.patientAddress || v.patientId?.address || ''),
+      escapeCSV(v.patientId?.phone || ''),
+      escapeCSV(v.doctorId?.name ? `Dr. ${v.doctorId.name}` : ''),
+      escapeCSV(v.serviceId?.name || 'Consultation'),
+      escapeCSV(v.fee || 0),
+      escapeCSV(v.status || 'completed'),
+      escapeCSV(v.paymentStatus || 'paid'),
+      escapeCSV(v.notes || ''),
+      escapeCSV(v.createdAt ? new Date(v.createdAt).toISOString() : '')
     ].join(','));
 
     const csvContent = [headers.join(','), ...rows].join('\n');
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=Shree_Ganpati_Clinic_Report_${getISODateOnly()}.csv`);
+    res.setHeader('Content-Disposition', `attachment; filename=Shree_Ganpati_Clinic_Visits_${getISODateOnly()}.csv`);
     res.status(200).send(csvContent);
   } catch (error) {
     console.error('Export CSV Error:', error);

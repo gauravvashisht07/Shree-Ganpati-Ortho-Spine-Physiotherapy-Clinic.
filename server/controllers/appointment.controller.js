@@ -2,8 +2,10 @@ const Appointment = require('../models/Appointment');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Service = require('../models/Service');
+const Visit = require('../models/Visit');
 const { generateSlots } = require('../services/slotGenerator');
 const { sendBookingConfirmation, sendCancellationNotice } = require('../services/notification.service');
+const { resolveOrCreatePatient, syncAppointmentToVisit, syncPatientVisitStats } = require('../services/patientVisit.service');
 
 exports.createAppointment = async (req, res) => {
   try {
@@ -92,71 +94,21 @@ exports.createAppointment = async (req, res) => {
       }
     }
 
-    // Resolve or create patient
+    // Resolve or create patient using unified service
     if (!patientId) {
       if (!patientName || !patientName.trim()) {
         return res.status(400).json({ message: 'Patient name is required for booking.' });
       }
 
-      const cleanName = patientName.trim();
-      const rawEmail = (patientEmail || '').trim().toLowerCase();
-      const rawPhone = (patientPhone || '').trim();
-
-      // Determine cleanEmail to guarantee database uniqueness and consistency
-      let cleanEmail = rawEmail;
-      if (!cleanEmail) {
-        if (rawPhone) {
-          const cleanPhoneDigits = rawPhone.replace(/[^\d+]/g, '');
-          cleanEmail = `${cleanPhoneDigits}@clinic.local`;
-        } else {
-          cleanEmail = `patient_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@clinic.local`;
-        }
-      }
-
-      let patient = null;
-      if (rawEmail) {
-        patient = await Patient.findOne({ email: rawEmail });
-      } else if (rawPhone) {
-        patient = await Patient.findOne({ phone: rawPhone });
-        if (!patient) {
-          patient = await Patient.findOne({ email: cleanEmail });
-        }
-      }
-
-      if (!patient) {
-        patient = await Patient.create({
-          name: cleanName,
-          email: cleanEmail,
-          phone: rawPhone || undefined,
-          address: finalAddress || undefined,
-          age: finalAge,
-          gender: finalGender || undefined,
-          role: 'patient'
-        });
-      } else {
-        let changed = false;
-        if (rawPhone && !patient.phone) {
-          patient.phone = rawPhone;
-          changed = true;
-        }
-        if (rawEmail && (!patient.email || patient.email.endsWith('@clinic.local'))) {
-          patient.email = rawEmail;
-          changed = true;
-        }
-        if (finalAddress && (!patient.address || patient.address !== finalAddress)) {
-          patient.address = finalAddress;
-          changed = true;
-        }
-        if (finalAge !== undefined && patient.age !== finalAge) {
-          patient.age = finalAge;
-          changed = true;
-        }
-        if (finalGender && patient.gender !== finalGender) {
-          patient.gender = finalGender;
-          changed = true;
-        }
-        if (changed) await patient.save();
-      }
+      const patient = await resolveOrCreatePatient({
+        patientName,
+        patientEmail,
+        patientPhone,
+        patientAddress: finalAddress,
+        patientAge: finalAge,
+        patientGender: finalGender,
+        registrationDate: date // Backdate registration if booking is for past date
+      });
       patientId = patient._id;
     }
 
@@ -206,6 +158,15 @@ exports.createAppointment = async (req, res) => {
       notes: (notes || '').trim(),
       isActive: status !== 'cancelled'
     });
+
+    // If appointment is marked completed right at creation, sync to clinical Visit
+    if (appointment.status === 'completed') {
+      try {
+        await syncAppointmentToVisit(appointment);
+      } catch (e) {
+        console.warn('Failed to sync completed appointment to Visit record:', e.message);
+      }
+    }
 
     // Populate references
     const populatedAppointment = await Appointment.findById(appointment._id)
@@ -322,6 +283,13 @@ exports.patientCancel = async (req, res) => {
     appointment.isActive = false; // Free up the slot in unique index
     await appointment.save();
 
+    // Sync cancellation to visit records
+    try {
+      await syncAppointmentToVisit(appointment);
+    } catch (e) {
+      console.warn('Failed to sync cancellation to Visit:', e.message);
+    }
+
     try {
       sendCancellationNotice(appointment);
     } catch (e) {
@@ -353,6 +321,13 @@ exports.cancelAppointment = async (req, res) => {
     appointment.status = 'cancelled';
     appointment.isActive = false; // Free up the slot in unique index
     await appointment.save();
+
+    // Sync cancellation to visit records
+    try {
+      await syncAppointmentToVisit(appointment);
+    } catch (e) {
+      console.warn('Failed to sync cancellation to Visit:', e.message);
+    }
 
     // Fire and forget cancellation email
     sendCancellationNotice(appointment);
@@ -430,6 +405,14 @@ exports.updateStatus = async (req, res) => {
     }
 
     await appointment.save();
+
+    // Sync visit record and patient stats
+    try {
+      await syncAppointmentToVisit(appointment);
+    } catch (e) {
+      console.warn('Failed to sync appointment status to Visit:', e.message);
+    }
+
     res.json({ message: 'Status updated successfully', appointment });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -519,6 +502,13 @@ exports.updateAppointment = async (req, res) => {
 
     await appointment.save();
 
+    // Sync visit record and patient stats
+    try {
+      await syncAppointmentToVisit(appointment);
+    } catch (e) {
+      console.warn('Failed to sync appointment update to Visit:', e.message);
+    }
+
     // Update associated patient document if patient details were provided
     if (appointment.patientId) {
       const patient = await Patient.findById(appointment.patientId);
@@ -578,6 +568,17 @@ exports.deleteAppointment = async (req, res) => {
     const { id } = req.params;
     const appointment = await Appointment.findByIdAndDelete(id);
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+
+    // Clean up any linked visit and sync patient stats
+    try {
+      await Visit.deleteMany({ appointmentId: id });
+      if (appointment.patientId) {
+        await syncPatientVisitStats(appointment.patientId);
+      }
+    } catch (e) {
+      console.warn('Failed to clean up Visit on appointment deletion:', e.message);
+    }
+
     res.json({ message: 'Appointment deleted successfully', id });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

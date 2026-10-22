@@ -2,6 +2,14 @@ const mongoose = require('mongoose');
 
 const patientSchema = new mongoose.Schema(
   {
+    patientId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
     name: {
       type: String,
       required: true,
@@ -17,6 +25,11 @@ const patientSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
+    },
+    phoneNormalized: {
+      type: String,
+      trim: true,
+      index: true,
     },
     address: {
       type: String,
@@ -38,6 +51,23 @@ const patientSchema = new mongoose.Schema(
     role: {
       type: String,
       default: 'patient',
+    },
+    totalVisits: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    firstVisitDate: {
+      type: String, // YYYY-MM-DD
+      default: null,
+    },
+    lastVisitDate: {
+      type: String, // YYYY-MM-DD
+      default: null,
+    },
+    registrationDate: {
+      type: String, // YYYY-MM-DD
+      default: null,
     },
     medicalNotes: [
       {
