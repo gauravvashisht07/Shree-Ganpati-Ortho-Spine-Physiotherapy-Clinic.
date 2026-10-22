@@ -573,8 +573,8 @@ export function RushHeatmap({ heatmapData = [], onCellClick = null }) {
   });
 
   const slots = [
-    '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
-    '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM'
+    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
   ];
 
   const getHeatmapColor = (count, max) => {
@@ -593,11 +593,13 @@ export function RushHeatmap({ heatmapData = [], onCellClick = null }) {
     return ratio >= 0.5 ? '#FFFFFF' : '#111827';
   };
 
+  const gridColsStyle = { gridTemplateColumns: `100px repeat(${slots.length}, minmax(0, 1fr))` };
+
   return (
     <div className="w-full overflow-x-auto pb-4">
       <div className="min-w-[720px]">
         {/* Header row with time slots */}
-        <div className="grid grid-cols-[100px_repeat(14,_1fr)] gap-1 mb-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">
+        <div style={gridColsStyle} className="grid gap-1 mb-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">
           <div className="text-left pl-2">Day</div>
           {slots.map(s => (
             <div key={s} className="truncate">
@@ -608,7 +610,7 @@ export function RushHeatmap({ heatmapData = [], onCellClick = null }) {
 
         {/* Rows for each day */}
         {days.map(day => (
-          <div key={day} className="grid grid-cols-[100px_repeat(14,_1fr)] gap-1 mb-1 items-center">
+          <div key={day} style={gridColsStyle} className="grid gap-1 mb-1 items-center">
             <div className="text-xs font-bold text-ink pl-2 truncate">{day.slice(0, 3)}</div>
             {slots.map(slot => {
               const key = `${day}-${slot}`;

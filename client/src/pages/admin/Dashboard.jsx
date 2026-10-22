@@ -146,7 +146,7 @@ function AppointmentsTab() {
     doctorId: '',
     serviceId: '',
     date: new Date().toISOString().split('T')[0],
-    timeSlot: '09:30 AM',
+    timeSlot: '10:00 AM',
     status: 'confirmed',
     duration: 30,
     notes: ''
@@ -213,7 +213,7 @@ function AppointmentsTab() {
         doctorId: doctors[0]?._id || '',
         serviceId: services[0]?._id || '',
         date: selectedScheduleDate || new Date().toISOString().split('T')[0],
-        timeSlot: '09:30 AM',
+        timeSlot: '10:00 AM',
         status: 'confirmed',
         paymentStatus: 'paid',
         duration: 30,
@@ -284,8 +284,8 @@ function AppointmentsTab() {
   });
 
   const timeOptions = [
-    '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
-    '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM'
+    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM'
   ];
 
   const handleStartAdd = (prefillSlot = null) => {
@@ -302,7 +302,7 @@ function AppointmentsTab() {
       doctorId: (selectedDoctorFilter !== 'All' ? selectedDoctorFilter : (doctors[0]?._id || '')),
       serviceId: (selectedServiceFilter !== 'All' ? selectedServiceFilter : (services[0]?._id || '')),
       date: initialDate,
-      timeSlot: prefillSlot || '09:30 AM',
+      timeSlot: prefillSlot || '10:00 AM',
       status: isPast ? 'completed' : 'confirmed',
       paymentStatus: 'paid',
       duration: 30,
@@ -324,7 +324,7 @@ function AppointmentsTab() {
       doctorId: appt.doctorId?._id || appt.doctorId || doctors[0]?._id || '',
       serviceId: appt.serviceId?._id || appt.serviceId || services[0]?._id || '',
       date: appt.date || '',
-      timeSlot: appt.timeSlot || '09:30 AM',
+      timeSlot: appt.timeSlot || '10:00 AM',
       status: appt.status || 'confirmed',
       paymentStatus: appt.paymentStatus || 'pending',
       duration: appt.duration || 30,
