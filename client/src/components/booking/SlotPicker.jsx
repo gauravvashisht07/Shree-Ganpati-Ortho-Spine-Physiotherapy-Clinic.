@@ -59,14 +59,21 @@ export default function SlotPicker() {
     }
   }, [services, preselectedServiceName]);
 
-  // Next 14 working days (Mon - Sat only, excluding Sundays)
+  // Next 14 working days (Mon - Sat only, Sunday strictly excluded)
+  const formatLocalDate = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const upcomingDates = [];
-  let dayOffset = 1;
+  let dayOffset = 0; // Starts from today (if open) or next open day
   while (upcomingDates.length < 14) {
     const d = new Date();
     d.setDate(d.getDate() + dayOffset);
-    if (d.getDay() !== 0) { // Exclude Sunday (0)
-      upcomingDates.push(d.toISOString().split('T')[0]);
+    if (d.getDay() !== 0) { // Exclude Sunday (0) — Monday(1) through Saturday(6) are included
+      upcomingDates.push(formatLocalDate(d));
     }
     dayOffset++;
   }
@@ -310,7 +317,8 @@ export default function SlotPicker() {
               </label>
               <div className="flex overflow-x-auto gap-3 pb-3 snap-x">
                 {upcomingDates.map(dateStr => {
-                  const dateObj = new Date(dateStr);
+                  const [y, m, d] = dateStr.split('-').map(Number);
+                  const dateObj = new Date(y, m - 1, d);
                   const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
                   const dayNum = dateObj.getDate();
                   const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
@@ -338,7 +346,10 @@ export default function SlotPicker() {
               {/* Time Slots */}
               <div className="mt-6">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 font-display">
-                  Available Slots for {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : 'selected date'}
+                  Available Slots for {selectedDate ? (() => {
+                    const [y, m, d] = selectedDate.split('-').map(Number);
+                    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+                  })() : 'selected date'}
                 </label>
 
                 {slotsLoading ? (

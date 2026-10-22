@@ -10,7 +10,13 @@ export default function BookingConfirmation({ appointment }) {
   const serviceName = appointment?.serviceId?.name || appointment?.serviceName || 'Physiotherapy Consultation';
   const date = appointment?.date;
   const timeSlot = appointment?.timeSlot;
-  const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : null;
+  const formattedDate = date ? (() => {
+    if (typeof date === 'string' && date.includes('-')) {
+      const [y, m, d] = date.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    return new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  })() : null;
 
   return (
     <>

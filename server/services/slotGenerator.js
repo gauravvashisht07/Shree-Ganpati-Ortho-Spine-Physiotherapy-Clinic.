@@ -2,6 +2,12 @@ const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
 
 const getDayName = (dateString) => {
+  if (dateString && typeof dateString === 'string' && dateString.includes('-')) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[date.getDay()];
+  }
   const date = new Date(dateString);
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   return days[date.getDay()];
