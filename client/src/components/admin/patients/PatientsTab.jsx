@@ -152,11 +152,11 @@ export default function PatientsTab() {
   const totalPages = patientsData?.totalPages || 1;
   const stats = patientsData?.stats || { totalRegistered: 0, noVisitsYet: 0, inFilteredView: 0 };
 
-  // Live duplicate detection lookup when typing phone or name in Add Modal
+  // Live duplicate detection lookup when typing phone, name, ID, or village in Add Modal
   useEffect(() => {
     if (!showAddModal || selectedExistingPatient) return;
     const query = formData.patientPhone.trim() || formData.patientName.trim();
-    if (query.length < 3) {
+    if (query.length < 2) {
       setMatchedExistingPatients([]);
       return;
     }
@@ -168,7 +168,7 @@ export default function PatientsTab() {
       } catch (err) {
         console.warn('Autocomplete search failed:', err.message);
       }
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [formData.patientPhone, formData.patientName, showAddModal, selectedExistingPatient]);
@@ -579,24 +579,51 @@ export default function PatientsTab() {
                   <span>⚠️</span>
                   <span>Existing Patient Match Found:</span>
                 </div>
-                <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                <div className="space-y-1.5 max-h-44 overflow-y-auto">
                   {matchedExistingPatients.map(m => (
                     <div
                       key={m._id}
-                      className="bg-white p-2.5 rounded-lg border border-amber-200 flex items-center justify-between gap-2 text-xs"
+                      className="bg-white p-3 rounded-xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-2xs hover:border-amber-300 transition-colors"
                     >
-                      <div>
-                        <strong className="text-ink">{m.name}</strong>
-                        <span className="font-mono text-teal ml-1.5 font-bold">[{m.patientId}]</span>
-                        <span className="text-gray-500 ml-2">📞 {m.phone || 'No phone'}</span>
-                        <span className="text-gray-400 ml-2">({m.totalVisits || 0} visits)</span>
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <strong className="text-ink text-sm">{m.name}</strong>
+                          <span className="font-mono text-teal font-bold bg-teal/10 px-2 py-0.5 rounded text-[11px] border border-teal/20">
+                            {m.patientId || 'SGP-XXXX'}
+                          </span>
+                          {m.age && (
+                            <span className="text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {m.age} yrs
+                            </span>
+                          )}
+                          {m.gender && m.gender !== 'prefer-not-to-say' && (
+                            <span className="text-[10px] font-bold text-teal bg-teal/5 px-2 py-0.5 rounded-full capitalize">
+                              {m.gender}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-[11px] text-gray-600 flex items-center gap-2 flex-wrap">
+                          {m.address && (
+                            <span className="text-gray-700 font-medium">📍 {m.address}</span>
+                          )}
+                          {m.phone ? (
+                            <span className="font-mono">📞 {m.phone}</span>
+                          ) : (
+                            <span className="text-gray-400 italic">No phone registered</span>
+                          )}
+                          <span className="text-coral font-bold font-mono">
+                            {m.totalVisits || 0} visits (Last: {m.lastVisitDate || 'No visits'})
+                          </span>
+                        </div>
                       </div>
+
                       <button
                         type="button"
                         onClick={() => handleSelectExistingMatch(m)}
-                        className="bg-teal text-white font-bold text-[11px] px-3 py-1 rounded-md hover:bg-[#186f68] transition-colors shrink-0"
+                        className="bg-teal text-white font-bold text-xs px-3.5 py-1.5 rounded-lg hover:bg-[#186f68] transition-colors shrink-0 self-end sm:self-center"
                       >
-                        Select This Patient
+                        ✓ Select This Patient
                       </button>
                     </div>
                   ))}

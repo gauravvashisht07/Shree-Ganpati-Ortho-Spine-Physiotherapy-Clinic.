@@ -61,8 +61,14 @@ async function searchExistingPatients(term) {
 
   const orConditions = [
     { name: { $regex: cleanTerm, $options: 'i' } },
-    { patientId: { $regex: cleanTerm, $options: 'i' } }
+    { patientId: { $regex: cleanTerm, $options: 'i' } },
+    { address: { $regex: cleanTerm, $options: 'i' } }
   ];
+
+  // If term is numeric (e.g. 1001 or 1012), also match SGP-1001 / SGP-1012
+  if (/^\d{3,5}$/.test(cleanTerm)) {
+    orConditions.push({ patientId: { $regex: `SGP-${cleanTerm}`, $options: 'i' } });
+  }
 
   if (cleanTerm.includes('@')) {
     orConditions.push({ email: cleanTerm.toLowerCase() });
