@@ -92,12 +92,12 @@ export default function LocationSection() {
                   </span>
                 </div>
                 <a
-                  href="https://www.instagram.com/physiotherapist_nadaun?exln=ZDNlZDc0MzIxNw=="
+                  href="https://www.instagram.com/physiotherapist_nadaun_/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-95 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all"
                 >
-                  <span>Follow @physiotherapist_nadaun</span>
+                  <span>Follow @physiotherapist_nadaun_</span>
                   <span>↗</span>
                 </a>
               </div>

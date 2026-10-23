@@ -126,7 +126,7 @@ function ClinicalVideoSection({ videoUrl, title }) {
             </span>
             <div>
               <h3 className="text-base sm:text-lg font-display font-bold text-ink">Clinical Video Demonstration</h3>
-              <p className="text-xs text-gray-500">Instagram Reel Guide (@physiotherapist_nadaun)</p>
+              <p className="text-xs text-gray-500">Instagram Reel Guide (@physiotherapist_nadaun_)</p>
             </div>
           </div>
           <a
@@ -185,7 +185,7 @@ function ClinicalVideoSection({ videoUrl, title }) {
                 </span>
               </div>
               <p className="text-sm font-bold text-gray-800 mt-0.5">
-                @{video.handle || 'physiotherapist_nadaun'}
+                @{video.handle || 'physiotherapist_nadaun_'}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
                 Watch Dr. Gaurav Sharma demonstrate this exercise routine, isometric angles, and rehabilitation form.
