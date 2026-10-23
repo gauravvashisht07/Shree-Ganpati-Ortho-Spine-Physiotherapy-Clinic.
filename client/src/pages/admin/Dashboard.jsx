@@ -33,26 +33,42 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-base flex flex-col md:flex-row font-body">
       {/* Mobile Header for Sidebar Toggle */}
-      <div className="md:hidden bg-white p-4 flex justify-between items-center shadow-sm z-20">
-        <h1 className="text-xl font-display font-bold text-ink">Clinic Admin</h1>
-        <div className="flex items-center gap-2">
+      <div className="md:hidden sticky top-0 bg-white px-4 py-3 flex justify-between items-center shadow-sm border-b border-gray-100 z-30 h-16 shrink-0">
+        <Link to="/" className="flex items-center gap-2.5 min-w-0">
+          <img src="/LOGO.jpeg" alt="Logo" className="w-8 h-8 rounded-full object-contain border border-[#1F8A82] shrink-0" />
+          <h1 className="text-lg font-display font-black text-ink truncate">Clinic Admin</h1>
+        </Link>
+        <div className="flex items-center gap-2 shrink-0">
           <button 
             onClick={handleLogout}
             className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
           >
             Logout
           </button>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-2xl min-h-[44px] min-w-[44px] flex items-center justify-center">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)} 
+            className="text-2xl min-h-[40px] min-w-[40px] flex items-center justify-center text-ink rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Toggle admin menu"
+          >
             {sidebarOpen ? '✕' : '☰'}
           </button>
         </div>
       </div>
 
+      {/* Backdrop overlay for mobile drawer */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-20 transition-opacity"
+          aria-label="Close menu backdrop"
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`
-        fixed md:sticky top-0 left-0 h-screen bg-white shadow-md z-10 transition-transform duration-300
-        ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 w-64 lg:w-72'}
-        flex flex-col py-8 border-r border-gray-100
+        fixed md:sticky top-16 md:top-0 left-0 h-[calc(100dvh-4rem)] md:h-screen bg-white shadow-xl md:shadow-md z-30 transition-transform duration-300
+        ${sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0 w-64 lg:w-72'}
+        flex flex-col py-4 md:py-8 border-r border-gray-100 overflow-y-auto
       `}>
         <Link to="/" className="hidden md:flex items-center gap-3 px-8 mb-8">
           <img src="/LOGO.jpeg" alt="Shree Ganpati Ortho & Spine Physiotherapy Clinic Logo" className="w-10 h-10 rounded-full object-contain border border-[#1F8A82]" />
@@ -78,15 +94,15 @@ export default function Dashboard() {
               }`}
             >
               <span className="text-xl">{item.icon}</span>
-              <span className="md:inline">{item.label}</span>
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
         {/* Sidebar Footer: Admin User & Logout */}
-        <div className="px-4 pt-4 mt-auto border-t border-gray-100 space-y-3">
+        <div className="px-4 pt-4 mt-auto border-t border-gray-100 space-y-3 shrink-0 pb-2">
           <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-2xl">
-            <div className="w-8 h-8 rounded-full bg-teal text-white flex items-center justify-center font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-teal text-white flex items-center justify-center font-bold text-xs shrink-0">
               AD
             </div>
             <div className="flex-1 min-w-0">
