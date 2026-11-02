@@ -40,6 +40,8 @@ router.put('/:id/cancel', authMiddleware, requireRole('patient', 'admin'), appoi
 
 // Doctor & Admin endpoints
 router.get('/', authMiddleware, requireRole('admin'), appointmentController.getAll);
+router.get('/notifications', authMiddleware, requireRole('doctor', 'admin'), appointmentController.getRecentNotifications);
+router.post('/test-email', authMiddleware, requireRole('admin'), appointmentController.testEmailConnection);
 router.get('/slot-occupancy', authMiddleware, requireRole('doctor', 'admin'), appointmentController.getSlotOccupancy);
 router.get('/doctor/:doctorId', authMiddleware, requireRole('doctor', 'admin'), appointmentController.getDoctorSchedule);
 router.patch('/:id/status', authMiddleware, requireRole('doctor', 'admin'), appointmentController.updateStatus);

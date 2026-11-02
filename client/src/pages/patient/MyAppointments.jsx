@@ -5,6 +5,7 @@ import axiosInstance from '../../api/axiosInstance';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import AppointmentSlipModal from '../../components/booking/AppointmentSlipModal';
+import { buildGoogleCalendarUrl, downloadAppointmentIcs } from '../../utils/calendar';
 
 export default function MyAppointments() {
   const navigate = useNavigate();
@@ -201,15 +202,36 @@ export default function MyAppointments() {
                               <p className="text-coral font-bold text-xl font-mono mt-0.5">{appt.timeSlot}</p>
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100">
+                              {/* Print Slip */}
                               <button
                                 onClick={() => setSelectedSlipAppt(appt)}
-                                className="text-xs font-bold text-teal bg-teal/10 hover:bg-teal hover:text-white px-3.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                                className="text-xs font-bold text-teal bg-teal/10 hover:bg-teal hover:text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
                               >
-                                <span>🖨️</span> Print Slip
+                                🖨️ Slip
                               </button>
 
-                              <div className="flex items-center gap-3 ml-auto">
+                              {/* Add to Google Calendar */}
+                              <a
+                                href={buildGoogleCalendarUrl(appt)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                              >
+                                📅 Google Cal
+                              </a>
+
+                              {/* Download .ics */}
+                              <button
+                                onClick={() => downloadAppointmentIcs(appt)}
+                                className="text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-600 hover:text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                              >
+                                ⬇️ .ics
+                              </button>
+
+                              {/* Cancel / Reschedule */}
+                              <div className="flex items-center gap-2 ml-auto">
                                 {cancellingApptId === appt._id ? (
                                   <div className="flex items-center gap-1.5 animate-fadeIn">
                                     <button
