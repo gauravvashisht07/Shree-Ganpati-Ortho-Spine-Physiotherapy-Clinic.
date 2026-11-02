@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppointmentSlipModal from './AppointmentSlipModal';
+import { buildGoogleCalendarUrl, downloadAppointmentIcs } from '../../utils/calendar';
 
 export default function BookingConfirmation({ appointment }) {
   const [showSlip, setShowSlip] = useState(false);
@@ -98,6 +99,41 @@ export default function BookingConfirmation({ appointment }) {
 
         {/* Action Buttons: WhatsApp + Print + Links */}
         <div className="space-y-3">
+          {/* Calendar Sync Options */}
+          <div className="bg-[#FAF6F0] border border-teal/15 rounded-2xl p-4 text-left">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🗓️</span>
+                <span className="text-xs font-bold text-ink uppercase tracking-wider font-display">Sync to Calendar</span>
+              </div>
+              <span className="text-[10px] font-bold text-teal bg-teal/10 px-2 py-0.5 rounded-full">
+                Phone reminder set
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <a
+                href={buildGoogleCalendarUrl(appointment) || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 py-2.5 px-3 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 text-ink font-bold text-xs transition-all shadow-2xs hover:shadow-xs"
+              >
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M19.5 3h-3V1.5h-1.5V3h-6V1.5H7.5V3h-3C3.67 3 3 3.67 3 4.5v15c0 .83.67 1.5 1.5 1.5h15c.83 0 1.5-.67 1.5-1.5v-15c0-.83-.67-1.5-1.5-1.5zm0 16.5h-15V8.5h15v11z"/>
+                </svg>
+                <span>Add to Google Calendar</span>
+              </a>
+
+              <button
+                onClick={() => downloadAppointmentIcs(appointment)}
+                className="inline-flex items-center justify-center gap-2 py-2.5 px-3 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 text-ink font-bold text-xs transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+              >
+                <span>📲</span>
+                <span>Apple / Outlook (.ics)</span>
+              </button>
+            </div>
+          </div>
+
           {/* Primary WhatsApp Share Button */}
           <button
             onClick={handleShareWhatsApp}

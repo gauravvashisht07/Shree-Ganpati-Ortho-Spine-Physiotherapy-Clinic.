@@ -46,6 +46,82 @@ const CLINIC_EMAIL = process.env.ADMIN_EMAIL || 'shreeganpatiorthospinephysio@gm
 const SENDER_EMAIL = process.env.SMTP_FROM || `"${CLINIC_NAME}" <${CLINIC_EMAIL}>`;
 
 /**
+ * Parse date and time into start/end calendar format (YYYYMMDDTHHmm00)
+ */
+const getCalendarDateTimeRange = (dateStr, timeSlotStr, durationMins = 30) => {
+  if (!dateStr || !timeSlotStr) return null;
+
+  let [year, month, day] = dateStr.split(/[-/]/).map(Number);
+  if (!year || !month || !day) {
+    const d = new Date(dateStr);
+    year = d.getFullYear();
+    month = d.getMonth() + 1;
+    day = d.getDate();
+  }
+
+  let cleanTime = String(timeSlotStr).trim().toUpperCase();
+  let isPM = cleanTime.includes('PM');
+  let isAM = cleanTime.includes('AM');
+  let [rawH, rawM = '00'] = cleanTime.replace(/[^\d:]/g, '').split(':');
+  let hours = parseInt(rawH, 10) || 10;
+  let minutes = parseInt(rawM, 10) || 0;
+
+  if (isPM && hours < 12) hours += 12;
+  if (isAM && hours === 12) hours = 0;
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const startDate = new Date(year, month - 1, day, hours, minutes, 0);
+  const endDate = new Date(startDate.getTime() + (Number(durationMins) || 30) * 60 * 1000);
+
+  const format = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+
+  return {
+    start: format(startDate),
+    end: format(endDate),
+  };
+};
+
+/**
+ * Generate iCalendar RFC 5545 Buffer with built-in 1-hour alarm reminder
+ */
+const generateIcsBuffer = (appointment, range) => {
+  const id = appointment._id || `appt-${Date.now()}`;
+  const patientName = appointment.patientId?.name || 'Patient';
+  const doctorName = appointment.doctorId?.name || 'Specialist';
+  const serviceName = appointment.serviceId?.name || 'Physiotherapy Consultation';
+  const nowUTC = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  const title = `Physiotherapy: ${serviceName} (Dr. ${doctorName})`;
+  const description = `Patient: ${patientName}\\nDoctor: Dr. ${doctorName}\\nService: ${serviceName}\\nClinic: ${CLINIC_NAME}\\nDirections: ${CLINIC_MAP_URL}\\n\\nPlease arrive 10 minutes prior to your time slot in comfortable clothing.`;
+
+  const icsLines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Shree Ganpati Ortho & Spine Clinic//Appointment System//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:REQUEST',
+    'BEGIN:VEVENT',
+    `UID:${id}@clinic.shreeganpati`,
+    `DTSTAMP:${nowUTC}`,
+    `DTSTART;TZID=Asia/Kolkata:${range.start}`,
+    `DTEND;TZID=Asia/Kolkata:${range.end}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${description}`,
+    `LOCATION:${CLINIC_ADDRESS}`,
+    'STATUS:CONFIRMED',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT60M',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Reminder: Physiotherapy Appointment in 1 hour',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+
+  return Buffer.from(icsLines.join('\r\n'), 'utf-8');
+};
+
+/**
  * Send Booking Confirmation Email to Patient
  */
 const sendBookingConfirmation = async (appointment) => {
@@ -67,6 +143,19 @@ const sendBookingConfirmation = async (appointment) => {
     const serviceName = appointment.serviceId?.name || 'Physiotherapy Consultation';
     const date = appointment.date;
     const time = appointment.timeSlot;
+    const duration = appointment.duration || appointment.serviceId?.duration || 30;
+
+    const calRange = getCalendarDateTimeRange(date, time, duration);
+    let googleCalendarUrl = '#';
+    let icsBuffer = null;
+
+    if (calRange) {
+      const calTitle = encodeURIComponent(`Physiotherapy: ${serviceName} - Dr. ${doctorName}`);
+      const calDetails = encodeURIComponent(`Patient: ${patientName}\nDoctor: Dr. ${doctorName}\nService: ${serviceName}\nClinic: ${CLINIC_NAME}\nDirections: ${CLINIC_MAP_URL}\n\nPlease arrive 10 minutes prior to your time slot.`);
+      const calLoc = encodeURIComponent(CLINIC_ADDRESS);
+      googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${calTitle}&dates=${calRange.start}/${calRange.end}&ctz=Asia/Kolkata&details=${calDetails}&location=${calLoc}`;
+      icsBuffer = generateIcsBuffer(appointment, calRange);
+    }
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -88,7 +177,10 @@ const sendBookingConfirmation = async (appointment) => {
           .value { color: #221B26; font-weight: 700; text-align: right; }
           .instructions { background: #FFF9E6; border-left: 4px solid #FFC857; padding: 14px 18px; border-radius: 8px; margin: 24px 0; font-size: 13px; color: #555; }
           .instructions strong { color: #221B26; }
-          .btn { display: inline-block; background: #FF6F4D; color: #ffffff !important; font-weight: bold; text-decoration: none; padding: 12px 28px; border-radius: 50px; text-align: center; margin-top: 10px; }
+          .btn-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 24px 0 10px 0; }
+          .btn { display: inline-block; padding: 12px 24px; border-radius: 50px; font-weight: bold; font-size: 14px; text-decoration: none; text-align: center; }
+          .btn-cal { background: #1F8A82; color: #ffffff !important; }
+          .btn-map { background: #FF6F4D; color: #ffffff !important; }
           .footer { background: #F6F2EB; padding: 20px 28px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #ECE7DE; }
         </style>
       </head>
@@ -137,9 +229,13 @@ const sendBookingConfirmation = async (appointment) => {
               </ul>
             </div>
 
-            <div style="text-align: center; margin: 24px 0 10px 0;">
-              <a href="${CLINIC_MAP_URL}" class="btn" target="_blank">Get Directions on Google Maps</a>
+            <div class="btn-group">
+              <a href="${googleCalendarUrl}" class="btn btn-cal" target="_blank">📅 Add to Google Calendar</a>
+              <a href="${CLINIC_MAP_URL}" class="btn btn-map" target="_blank">🗺️ Get Directions on Maps</a>
             </div>
+            <p style="text-align: center; font-size: 12px; color: #777; margin-top: 14px; margin-bottom: 0;">
+              💡 <em>An interactive calendar invite (.ics) is also attached to sync with Apple Calendar or Outlook with 1 tap.</em>
+            </p>
           </div>
           <div class="footer">
             <p style="margin: 0 0 4px 0;">${CLINIC_NAME}</p>
@@ -150,13 +246,30 @@ const sendBookingConfirmation = async (appointment) => {
       </html>
     `;
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: SENDER_EMAIL,
       to: patientEmail,
       subject: `Appointment Confirmed: ${date} at ${time} - ${CLINIC_NAME}`,
       html: htmlContent,
-    });
-    console.log(`[Notification] Booking confirmation email sent to patient: ${patientEmail}`);
+    };
+
+    if (icsBuffer) {
+      mailOptions.icalEvent = {
+        filename: 'appointment.ics',
+        method: 'request',
+        content: icsBuffer,
+      };
+      mailOptions.attachments = [
+        {
+          filename: 'appointment-invite.ics',
+          content: icsBuffer,
+          contentType: 'text/calendar; charset=utf-8; method=REQUEST',
+        },
+      ];
+    }
+
+    await transporter.sendMail(mailOptions);
+    console.log(`[Notification] Booking confirmation email with .ics invite sent to patient: ${patientEmail}`);
   } catch (error) {
     console.error('[Notification] Failed to send booking confirmation email to patient:', error.message);
   }
