@@ -4,7 +4,13 @@ const Doctor = require('../models/Doctor');
 const Service = require('../models/Service');
 const Visit = require('../models/Visit');
 const { generateSlots } = require('../services/slotGenerator');
-const { sendBookingConfirmation, sendCancellationNotice } = require('../services/notification.service');
+const { 
+  sendBookingConfirmation, 
+  sendAdminBookingNotification, 
+  sendCancellationNotice, 
+  sendAdminCancellationNotice,
+  sendTestEmail 
+} = require('../services/notification.service');
 const { resolveOrCreatePatient, syncAppointmentToVisit, syncPatientVisitStats } = require('../services/patientVisit.service');
 
 exports.createAppointment = async (req, res) => {
@@ -174,9 +180,10 @@ exports.createAppointment = async (req, res) => {
       .populate('doctorId', 'name email slotCapacity')
       .populate('serviceId', 'name duration price');
 
-    // Fire and forget email notification
+    // Fire and forget email notification to both patient and clinic admin
     try {
       sendBookingConfirmation(populatedAppointment);
+      sendAdminBookingNotification(populatedAppointment);
     } catch (e) {
       console.warn('Email notification failed:', e.message);
     }
@@ -292,6 +299,7 @@ exports.patientCancel = async (req, res) => {
 
     try {
       sendCancellationNotice(appointment);
+      sendAdminCancellationNotice(appointment);
     } catch (e) {
       console.warn('Email notification failed:', e.message);
     }
@@ -331,6 +339,7 @@ exports.cancelAppointment = async (req, res) => {
 
     // Fire and forget cancellation email
     sendCancellationNotice(appointment);
+    sendAdminCancellationNotice(appointment);
 
     res.json({ message: 'Appointment cancelled successfully', appointment });
   } catch (error) {
@@ -402,6 +411,7 @@ exports.updateStatus = async (req, res) => {
         .populate('doctorId', 'name')
         .populate('serviceId', 'name');
       sendCancellationNotice(populatedAppt);
+      sendAdminCancellationNotice(populatedAppt);
     }
 
     await appointment.save();
@@ -551,6 +561,7 @@ exports.updateAppointment = async (req, res) => {
     if (status === 'cancelled' && prevStatus !== 'cancelled') {
       try {
         sendCancellationNotice(populatedAppt);
+        sendAdminCancellationNotice(populatedAppt);
       } catch (e) {
         console.warn('Email notification failed:', e.message);
       }
@@ -631,5 +642,42 @@ exports.getSlotOccupancy = async (req, res) => {
     res.json({ date, doctorId: doctorId || 'all', occupancy });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * Get recent booking notifications for Admin Dashboard Real-Time Bell
+ */
+exports.getRecentNotifications = async (req, res) => {
+  try {
+    const notifications = await Appointment.find()
+      .populate('patientId', 'name email phone address age gender')
+      .populate('doctorId', 'name email slotCapacity')
+      .populate('serviceId', 'name duration price')
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(15);
+    res.json(notifications);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch notifications', error: error.message });
+  }
+};
+
+/**
+ * Endpoint to test SMTP / Gmail delivery directly
+ */
+exports.testEmailConnection = async (req, res) => {
+  try {
+    const { targetEmail } = req.body || {};
+    const result = await sendTestEmail(targetEmail);
+    res.json({
+      success: true,
+      message: `Test email successfully dispatched to ${targetEmail || process.env.ADMIN_EMAIL}`,
+      messageId: result.messageId,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send test email',
+    });
   }
 };

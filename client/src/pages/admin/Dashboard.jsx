@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import PatientAnalytics from '../../components/admin/analytics/PatientAnalytics';
 import PatientDetailModal from '../../components/admin/analytics/PatientDetailModal';
 import PatientsTab from '../../components/admin/patients/PatientsTab';
+import NotificationBell from '../../components/admin/NotificationBell';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('appointments');
@@ -39,6 +40,7 @@ export default function Dashboard() {
           <h1 className="text-lg font-display font-black text-ink truncate">Clinic Admin</h1>
         </Link>
         <div className="flex items-center gap-2 shrink-0">
+          <NotificationBell onNavigateToAppointments={() => setActiveTab('appointments')} />
           <button 
             onClick={handleLogout}
             className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
@@ -124,6 +126,29 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
         <div className="max-w-6xl mx-auto">
+          {/* Top Admin Bar with Notification Bell and Live Link */}
+          <div className="hidden md:flex items-center justify-between pb-6 mb-6 border-b border-gray-200/60">
+            <div>
+              <h2 className="text-2xl font-display font-black text-ink">
+                {navItems.find(i => i.id === activeTab)?.label || 'Clinic Management'}
+              </h2>
+              <p className="text-xs text-gray-500 font-medium">
+                Real-time clinic administration &amp; appointment dispatch
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <NotificationBell onNavigateToAppointments={() => setActiveTab('appointments')} />
+              <Link
+                to="/book"
+                target="_blank"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-teal/10 hover:bg-teal text-teal hover:text-white font-bold text-xs transition-colors shadow-xs"
+                title="Open live public booking page"
+              >
+                <span>🌐</span>
+                <span>Open Booking Page</span>
+              </Link>
+            </div>
+          </div>
           {activeTab === 'appointments' && <AppointmentsTab />}
           {activeTab === 'analytics' && <PatientAnalytics />}
           {activeTab === 'doctors' && <DoctorsTab />}
@@ -825,7 +850,21 @@ function AppointmentsTab() {
                               )}
                             </div>
                             {(patientPhone || patientEmail) && (
-                              <div className="text-xs text-gray-400 font-normal">{patientPhone || patientEmail}</div>
+                              <div className="text-xs text-gray-400 font-normal flex items-center gap-2 mt-0.5">
+                                <span>{patientPhone || patientEmail}</span>
+                                {patientPhone && (
+                                  <a
+                                    href={`https://wa.me/91${patientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${patientName}, your appointment at Shree Ganpati Clinic is scheduled on ${appt.date} at ${appt.timeSlot}.`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1EBE5D] bg-[#25D366]/10 hover:bg-[#25D366] hover:text-white px-2 py-0.5 rounded-full transition-colors"
+                                    title="Send WhatsApp message"
+                                  >
+                                    <span>💬</span>
+                                    <span>WhatsApp</span>
+                                  </a>
+                                )}
+                              </div>
                             )}
                             {patientAddress && (
                               <div className="text-xs text-teal font-medium mt-1 flex items-center gap-1">
